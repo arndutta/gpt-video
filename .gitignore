@@ -1,0 +1,17 @@
+.venv/
+.cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.env
+.env.*
+!.env.example
+data/
+web/node_modules/
+web/dist/
+*.log
+*.egg-info/
+*.tsbuildinfo
+.DS_Store
