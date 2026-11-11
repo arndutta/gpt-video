@@ -19,9 +19,9 @@ export function PageHeading({ eyebrow, title, children, action }: { eyebrow: str
 }
 
 export function Status({ status }: { status: string }) {
-  const good = ['ok', 'completed', 'healthy'].includes(status);
-  const bad = ['failed', 'unavailable', 'degraded', 'interrupted'].includes(status);
-  return <span className={`status ${good ? 'success' : bad ? 'danger' : 'neutral'}`}><span className="status-dot" />{status.replaceAll('_', ' ')}</span>;
+  const good = ['ok', 'completed', 'healthy', 'passed', 'approved', 'applied', 'unchanged'].includes(status);
+  const bad = ['failed', 'unavailable', 'degraded', 'interrupted', 'blocked', 'execution_rejected', 'unknown', 'stale'].includes(status);
+  return <span className={`status ${good ? 'success' : bad ? 'danger' : 'neutral'}`}><span className="status-dot" />{status === 'unchanged' ? 'No change' : status.replaceAll('_', ' ')}</span>;
 }
 
 export function Drawer({ title, subtitle, onClose, children }: { title: string; subtitle?: string; onClose: () => void; children: ReactNode }) {

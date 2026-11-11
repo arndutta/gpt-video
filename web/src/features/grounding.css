@@ -1,0 +1,67 @@
+.grounding-body { gap:27px; }
+.grounding-intro { display:flex; flex-direction:column; gap:12px; align-items:flex-end; }
+.grounding-intro .notice { width:100%; }
+.grounding-section { display:flex; flex-direction:column; gap:14px; }
+.grounding-section+.grounding-section { border-top:1px solid var(--line); padding-top:24px; }
+.grounding-section-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.grounding-section-heading h3 { display:flex; align-items:center; gap:8px; margin:0; font-size:14px; }
+.grounding-section-heading h3 svg { color:var(--accent); flex-shrink:0; }
+.grounding-section-heading>span { color:var(--muted); font-size:10px; white-space:nowrap; }
+.grounding-section>.small { font-size:11px; }
+.grounding-upload-form { gap:15px; }
+.grounding-upload-form>label { font-size:11px; }
+.grounding-upload-form input,.grounding-upload-form select { font-size:12px; }
+.grounding-upload-form input[type="file"] { font-size:11px; background:var(--surface-alt); padding:12px; }
+.grounding-upload-form input[type="file"]::file-selector-button { background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:7px 9px; margin-right:12px; color:var(--text); cursor:pointer; }
+.grounding-upload-form>label:has(input[type="file"]) { gap:9px; }
+.grounding-upload-form>#grounding-file-hint { margin-top:-8px; }
+.grounding-advanced { border:1px solid var(--line); border-radius:7px; font-size:11px; }
+.grounding-advanced summary { cursor:pointer; padding:13px 12px; font-weight:600; }
+.grounding-advanced summary>span { margin-left:7px; color:var(--muted); font-size:10px; font-weight:400; }
+.grounding-advanced>div { border-top:1px solid var(--line); padding:14px 12px; display:flex; flex-direction:column; gap:14px; }
+.grounding-advanced label { font-size:11px; }
+.grounding-upload-form>.button { align-self:flex-start; }
+.grounding-accepted { color:var(--accent); font-size:11px; line-height:1.6; overflow-wrap:anywhere; }
+.grounding-totals { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.grounding-totals>div { padding:15px 16px; border:1px solid var(--line); border-radius:7px; background:var(--surface-alt); }
+.grounding-totals strong { display:block; font-weight:600; font-size:26px; font-variant-numeric:tabular-nums; }
+.grounding-totals span { display:block; color:var(--muted); font-size:10px; margin-top:6px; }
+.grounding-collection-list { border:1px solid var(--line); border-radius:7px; overflow:hidden; }
+.grounding-collection { display:flex; justify-content:space-between; gap:15px; padding:15px; }
+.grounding-collection+.grounding-collection { border-top:1px solid var(--line); }
+.grounding-collection h4 { margin:0; font-size:11px; font-weight:600; }
+.grounding-collection p { font-size:10px; color:var(--muted); margin-top:5px; }
+.grounding-collection small { display:block; font-size:9px; color:var(--muted); margin-top:8px; }
+.grounding-collection-count { text-align:right; flex-shrink:0; }
+.grounding-collection-count strong { font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
+.grounding-collection-count strong>span { font-size:9px; font-weight:400; color:var(--muted); }
+.grounding-collection-count small { margin-top:7px; }
+.grounding-embedding { font-size:11px; }
+.grounding-embedding strong { display:block; color:var(--text); font-size:11px; }
+.grounding-embedding p { margin-top:5px; }
+.grounding-embedding code { display:block; padding:9px 10px; border:1px solid var(--line); background:var(--surface); border-radius:5px; overflow-wrap:anywhere; user-select:all; font-size:10px; margin-top:9px; color:var(--text); }
+.grounding-upload-list { display:flex; flex-direction:column; gap:12px; padding:0; margin:0; list-style:none; }
+.grounding-upload { display:flex; flex-direction:column; gap:12px; border:1px solid var(--line); border-radius:7px; padding:15px; }
+.grounding-upload-heading { display:flex; align-items:flex-start; gap:9px; }
+.grounding-upload-heading>svg { color:var(--muted); flex-shrink:0; margin-top:1px; }
+.grounding-upload-heading>div { min-width:0; flex:1; }
+.grounding-upload-heading strong { display:block; font-size:11px; font-weight:600; overflow-wrap:anywhere; }
+.grounding-upload-heading small { display:block; font-size:9px; color:var(--muted); margin-top:6px; overflow-wrap:anywhere; line-height:1.5; }
+.grounding-job-status { display:inline-flex; align-items:center; gap:5px; flex-shrink:0; font-size:9px; border-radius:5px; padding:5px 6px; }
+.grounding-job-status.pending { background:var(--warning-soft); color:var(--warning); }
+.grounding-job-status.ready { background:var(--accent-soft); color:var(--accent); }
+.grounding-job-status.failed { background:var(--danger-soft); color:var(--danger); }
+.grounding-source { font-size:9px; color:var(--muted); overflow-wrap:anywhere; }
+.grounding-source code { margin-left:5px; color:var(--text); }
+.grounding-upload>.small { font-size:10px; }
+.grounding-upload-result { display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:10px; color:var(--accent); }
+.grounding-upload-result>span { width:100%; color:var(--muted); margin-top:2px; font-size:9px; overflow-wrap:anywhere; }
+.grounding-upload-error { padding:10px 11px; background:var(--danger-soft); border-radius:5px; font-size:10px; color:var(--danger); overflow-wrap:anywhere; }
+.grounding-upload-error p+p { margin-top:6px; }
+.grounding-upload-error small { display:block; margin-top:8px; font-size:9px; }
+.grounding-upload-time { display:flex; justify-content:space-between; flex-wrap:wrap; gap:7px; color:var(--muted); font-size:9px; border-top:1px solid var(--line); padding-top:10px; }
+.grounding-empty { display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; padding:25px 20px; border:1px dashed var(--line); border-radius:7px; color:var(--muted); }
+.grounding-empty strong { color:var(--text); font-size:12px; font-weight:600; }
+.grounding-empty p { font-size:11px; max-width:290px; }
+.grounding-section .loading { min-height:100px; font-size:11px; }
+@media(max-width:900px) { .grounding-body { padding:22px; } }

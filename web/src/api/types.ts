@@ -43,4 +43,6 @@ export type PreviewResult = {
 export type PricingRun = {
   id: string; status: string; stage?: string; created_at: string; completed_at?: string;
   error?: unknown; summary?: Record<string, unknown>; result?: PreviewResult;
+  request?: { kind?: string; [key: string]: unknown }; duration_seconds?: number;
+  token_cost?: number; metrics?: Record<string, unknown>; nodes?: unknown;
 };

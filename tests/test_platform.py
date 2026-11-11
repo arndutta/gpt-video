@@ -52,7 +52,7 @@ def test_health_summary_catalog_search_and_pagination_use_http_adapter(integrate
     assert health["mode"] == "supervised" and health["loop"]["running"] is False
     assert health["capabilities"] == {
         "quantitative_preview": True, "grounded_recommendations": False,
-        "price_execution": False, "continuous_loop": False,
+        "price_execution": True, "continuous_loop": True,
     }
     summary = client.get("/api/catalog/summary").json()
     assert summary["sku_count"] == 9

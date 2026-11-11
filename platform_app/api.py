@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from platform_app.commerce_client import CommerceUnavailable, read_competitors
 from platform_app.config import RunRequest, ScenarioRequest, Settings, SettingsUpdate, tls_context
 from platform_app.tools import AnalysisError, simulate_sku
+from platform_app.dashboard import audit_items
 
 router = APIRouter(prefix="/api")
 
@@ -26,13 +27,13 @@ async def health(request: Request):
     except CommerceUnavailable as error:
         ready, commerce = False, {"status": "unavailable", "detail": str(error)}
     return {"status": "ok" if ready else "degraded", "service": "pricing-platform",
-            "commerce": commerce, "mode": "supervised", "loop": {"running": False},
+            "commerce": commerce, "mode": state.governance.mode()["mode"], "loop": state.loop.state(),
             "tls_verification_disabled": not state.settings.verify_tls,
-            "gateway": {"configured": bool(state.settings.gateway_url),
-                        "status": "configured" if state.settings.gateway_url else "unconfigured",
-                        "verified": False},
-            "capabilities": {"quantitative_preview": ready, "grounded_recommendations": False,
-                             "price_execution": False, "continuous_loop": False}}
+            "gateway": state.gateway.current(),
+            "capabilities": {"quantitative_preview": ready,
+                             "grounded_recommendations": bool(ready and state.settings.gateway_url and state.settings.api_key
+                                and all(getattr(state.settings, 'model_' + r) for r in ('router','narrator','analyst','strategist'))),
+                             "price_execution": True, "continuous_loop": True}}
 
 
 @router.get("/catalog")
@@ -59,7 +60,13 @@ async def summary(request: Request):
 
 @router.get("/settings")
 def settings(request: Request):
-    return request.app.state.settings.public()
+    return {**request.app.state.settings.public(), "cache": request.app.state.llm.snapshot()["cache"],
+            "mode": request.app.state.governance.mode()["mode"]}
+
+
+@router.post("/gateway/check")
+async def verify_gateway_settings(request: Request):
+    return await request.app.state.gateway.check()
 
 
 @router.patch("/settings")
@@ -82,7 +89,7 @@ async def update_settings(update: SettingsUpdate, request: Request):
     # No await between validation and publication: readers get one complete snapshot.
     request.app.state.settings = candidate
     request.app.state.runs.settings = candidate
-    return candidate.public()
+    return settings(request)
 
 
 @router.get("/runs")
@@ -96,7 +103,8 @@ async def create_run(payload: RunRequest, request: Request):
     if status.get("status") != "ok" or not status.get("seeded"):
         raise HTTPException(503, "Commerce has no data. Run the demo data generator first.")
     try:
-        result = request.app.state.runs.start(payload)
+        manager = request.app.state.workflow if payload.kind == "grounded" else request.app.state.runs
+        result = manager.start(payload)
     except RuntimeError as error:
         raise HTTPException(409, str(error)) from None
     return {"id": result["id"], "status": result["status"]}
@@ -107,6 +115,8 @@ def get_run(run_id: str, request: Request):
     result = request.app.state.store.get_run(run_id)
     if not result:
         raise HTTPException(404, "Preview run not found")
+    if result["request"].get("kind") == "grounded" and result.get("result"):
+        result["result"]["recommendations"] = request.app.state.governance.queue(run_id=run_id)
     return result
 
 
@@ -123,7 +133,7 @@ async def run_events(run_id: str, request: Request):
             if encoded != previous:
                 yield f"event: progress\ndata: {encoded}\n\n"
                 previous = encoded
-            if run["status"] in {"completed", "failed", "interrupted"}:
+            if run["status"] in {"completed", "failed", "interrupted", "awaiting_review"}:
                 return
             await asyncio.sleep(.25)
 
@@ -145,7 +155,8 @@ async def scenario(payload: ScenarioRequest, request: Request):
         report = await manager.run_cpu(simulate_sku, context["catalog"][0], context["sales"],
                                        context["inventory"], competitors, payload.candidate_price,
                                        iterations=payload.iterations, seed=payload.seed,
-                                       horizon_days=payload.horizon_days)
+                                       horizon_days=payload.horizon_days,
+                                       learning=request.app.state.feedback.states().get(payload.sku))
         return {**report, "kind": "quantitative_preview"}
     except AnalysisError as error:
         raise HTTPException(422, {"code": error.code, "message": str(error), "quality": error.quality}) from None
@@ -156,5 +167,6 @@ async def scenario(payload: ScenarioRequest, request: Request):
 
 
 @router.get("/audit")
-def audit(request: Request, limit: int = Query(100, ge=1, le=1000)):
-    return {"items": request.app.state.store.list_audit(limit)}
+def audit(request: Request, limit: int = Query(100, ge=1, le=1000), automatic: bool = False,
+          run_id: str | None = None, sku: str | None = None):
+    return {"items": audit_items(request.app.state.store, automatic=automatic, run_id=run_id, sku=sku, limit=limit)}

@@ -6,9 +6,9 @@ import shutil
 import subprocess
 
 
-def node_runtime() -> tuple[Path, Path, str]:
-    options = [os.environ.get("NODE_BINARY"), shutil.which("node"),
-               "/opt/homebrew/bin/node", "/usr/local/bin/node"]
+def node_runtime(candidates=None) -> tuple[Path, Path, str]:
+    options = candidates if candidates is not None else [os.environ.get("NODE_BINARY"), shutil.which("node"),
+                                                        "/opt/homebrew/bin/node", "/usr/local/bin/node"]
     for option in dict.fromkeys(value for value in options if value):
         binary = Path(option)
         if not binary.is_file():

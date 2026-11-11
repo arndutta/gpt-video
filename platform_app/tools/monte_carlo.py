@@ -57,6 +57,15 @@ def sample_forecasts(
     demand = estimate.daily_demand * np.exp(log_price_effect) * seasonal * competitor_response
     # A small uncertain competitor follow-through is explicit, rather than an LLM claim.
     demand *= ratios ** 0.06
+    stress = product.get("_stress", "none")
+    if stress == "demand_collapse":
+        demand *= .5
+    elif stress == "competitor_undercut":
+        demand *= .8 ** .4
+    elif stress == "cost_spike":
+        costs *= 1.2
+    elif stress != "none":
+        raise ValueError("Unknown stress preset")
     units = np.minimum(demand * horizon_days, float(inventory["on_hand"]))
     revenue = candidates * units
     gross_profit = (candidates - costs[None, :]) * units

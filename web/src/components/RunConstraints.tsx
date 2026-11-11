@@ -1,0 +1,9 @@
+import type { RunConstraintsDraft } from '../api/runConstraints';
+
+export function RunConstraints({ categories, value, onChange, disabled = false }: { categories: string[]; value: RunConstraintsDraft; onChange: (value: RunConstraintsDraft) => void; disabled?: boolean }) {
+  return <details className="run-constraints"><summary>Advanced price constraints <span className="muted">(optional)</span></summary><div className="form-stack">
+    <p className="small muted">Limit this run's price changes and category prices. Blank values add no constraint. Commerce rules and compliance still apply.</p>
+    <label>Maximum price change (%)<input type="number" min="0" max="100" step="any" value={value.maxChangePct} disabled={disabled} onChange={event => onChange({ ...value, maxChangePct: event.target.value })} placeholder="Use existing limits" /></label>
+    {!!categories.length && <><h3>Category price bounds</h3><p className="small muted">Only categories in the selected run scope are submitted. Prices use the catalog's USD currency.</p>{categories.map(category => <fieldset key={category} className="constraint-category" disabled={disabled}><legend>{category}</legend><div className="form-two-columns"><label>Price floor<input type="number" min="0.01" max="99999999.99" step="0.01" value={value.categoryFloors[category] || ''} onChange={event => onChange({ ...value, categoryFloors: { ...value.categoryFloors, [category]: event.target.value } })} placeholder="No extra floor" /></label><label>Price ceiling<input type="number" min="0.01" max="99999999.99" step="0.01" value={value.categoryCeilings[category] || ''} onChange={event => onChange({ ...value, categoryCeilings: { ...value.categoryCeilings, [category]: event.target.value } })} placeholder="No extra ceiling" /></label></div></fieldset>)}</>}
+  </div></details>;
+}

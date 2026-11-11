@@ -6,7 +6,7 @@ from pathlib import Path
 
 import httpx
 
-from platform_app.wire import READ_SCHEMAS
+from platform_app.wire import CommerceHealth, READ_SCHEMAS
 
 
 class CommerceUnavailable(RuntimeError):
@@ -28,8 +28,7 @@ class CommerceClient:
                 if not isinstance(data, dict):
                     raise ValueError("Expected an object")
                 if route == "/health":
-                    if data.get("status") not in {"ok", "unavailable"} or not isinstance(data.get("seeded"), bool):
-                        raise ValueError("Invalid health response")
+                    CommerceHealth.model_validate(data)
                 else:
                     if (not isinstance(data.get("items"), list)
                             or not all(isinstance(item, dict) for item in data["items"])

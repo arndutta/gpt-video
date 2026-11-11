@@ -1,5 +1,6 @@
 import type { Distribution, Forecast, Recommendation } from '../api/types';
 import { money, number } from '../api/client';
+import { EvidenceSources } from './EvidenceSources';
 
 export function DistributionBand({ label, distribution, format = money }: { label: string; distribution?: Distribution; format?: (value: unknown) => string }) {
   if (!distribution) return null;
@@ -16,8 +17,10 @@ export function ForecastBands({ forecast, currency = 'USD' }: { forecast?: Forec
 
 export function RecommendationEvidence({ item }: { item: Recommendation }) {
   const elasticity = item.elasticity;
-  return <div className="drawer-body"><div className="price-comparison"><div><span>Current price</span><strong>{money(item.current_price, item.currency)}</strong></div><span>→</span><div><span>Preview price</span><strong>{money(item.proposed_price, item.currency)}</strong></div></div>
-    <div className="notice info">This candidate is an analytical preview. It has no approval status and cannot be pushed to Commerce.</div>
+  const grounded = typeof item.band === 'string' || !!item.rationale;
+  return <div className="drawer-body"><div className="price-comparison"><div><span>Current price</span><strong>{money(item.current_price, item.currency)}</strong></div><span>→</span><div><span>{grounded ? 'Proposed price' : 'Preview price'}</span><strong>{money(item.proposed_price, item.currency)}</strong></div></div>
+    <div className="notice info">{grounded ? 'This is retained run evidence. Current decisions, revisions, and execution outcomes are available in the review queue.' : 'This candidate is an analytical preview. It has no approval status and cannot be pushed to Commerce.'}</div>
+    {grounded && <><h3>Grounded rationale</h3><StructuredEvidence value={item.rationale} /><EvidenceSources value={{ citations: item.citations, sources: item.sources }} /><h3>Rules, banding, and stability</h3><StructuredEvidence value={{ band: item.band, band_reasons: item.band_reasons, compliance: item.compliance, stability: item.stability }} /></>}
     <h3>Forecast distributions</h3><ForecastBands forecast={item.forecast} currency={item.currency} />
     <h3>Elasticity estimate</h3><div className="evidence-grid"><div><span>Coefficient</span><strong>{number(elasticity?.estimate, 3)}</strong></div><div><span>95% interval</span><strong>{number(elasticity?.lower, 3)} to {number(elasticity?.upper, 3)}</strong></div><div><span>Observations</span><strong>{number(elasticity?.sample_size)}</strong></div><div><span>Confidence</span><strong>{number(item.confidence * 100, 1)}%</strong></div></div>
     <h3>Baseline comparison</h3><p className="muted small">Cost-plus/category-discount price: {money(item.baseline?.price, item.currency)}. Forecasts use the same simulation assumptions.</p><ForecastBands forecast={item.baseline?.forecast} currency={item.currency} />

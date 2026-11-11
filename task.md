@@ -1,7 +1,8 @@
 # Implementation Tasks: AI-Driven Dynamic Pricing Engine for Retail
 
-Status: Implementation started. Foundation services, a deterministic quantitative-preview
-slice, and the initial UI are implemented. Full milestone acceptance remains open.
+Status: Remaining development is implemented across the grounded workflow, governance,
+execution, feedback, loop, and UI. Local integration verification passes; external
+gateway, browser/Windows, and business-effectiveness acceptance gates remain open.
 Prepared: 2026-11-08. Source: [prd.md](prd.md), version 1.1, dated 2026-08-07.
 Companion documents: [requirement.md](requirement.md) and [design.md](design.md).
 
@@ -12,25 +13,80 @@ linked from the PRD are absent from this repository; only decisions described in
 are used here. Checkboxes remain open until the entire stated task and its acceptance
 criteria are met; implemented subsets are tracked below and in [README.md](README.md).
 
-### Current development status — 2026-11-08
+### Follow-up development — 2026-11-10
 
-- Implemented foundation subsets of T01–T09: separate FastAPI services, typed configuration,
-  local SQLite storage, seeded catalog/sales/inventory/competitor fixtures, Commerce read
-  and validated idempotent batch endpoints, and local startup/pre-flight scripts.
-- Implemented quantitative-preview subsets of T10–T13 and T31: fitted elasticity with
-  intervals, shared Monte Carlo, constrained candidate selection, family ladders, baseline
-  comparisons, quality gates, and inspectable initial confidence factors. No stability
-  damping, learned calibration, or grounded recommendation is claimed.
-- Implemented initial UI subsets of T26, T32–T35, T37: overview, catalog search/pagination,
-  preview runs/history/details, simulation bands, themes, runtime settings, and explicit
-  pending/disabled state for unimplemented agent, grounding, review, execution, and loop features.
-- Persistence, cancellation, audit, metadata telemetry, boundary checks, and automated
-  tests provide initial parts of T19, T25, T41, T42, and T45. Persisted preview history is
-  not a LangGraph checkpoint or resumable agent run.
-- Next integration work is T14–T19: Chroma ingestion/retrieval, the sole GroundedLLM
-  entry point, structured generation, citations, and the five-stage graph. Actual gateway
-  credentials/model availability remain unverified; full M1/M3 acceptance is open.
-- Build authorization comes from the user's explicit instruction to start development.
+- Remaining FR-019 run-scoped constraint controls now cover run creation and loop setup:
+  optional maximum change is entered as a percentage and submitted as a fraction;
+  selected-scope category floors/ceilings retain decimal monetary strings. Blank fields
+  add no bound, inverted/invalid bounds fail clearly, and current Commerce compliance
+  remains authoritative. Backend parity across preview/grounded/override/revert paths
+  is verified in the integrated suite.
+- Settings exposes the trial market-gap escalation threshold (initial 30%). Explicit
+  **No change** terminal outcomes remain distinct from applied writes; loop iteration
+  summaries expose the separate count. Realized comparisons now retain the mature
+  observed SKU denominator rather than comparing partial observations with all-run forecasts.
+- UI serialization/safety/rendering checks and the TypeScript/Vite production build pass.
+  The latest full backend suite passes 451 tests. This follow-up does not claim unavailable
+  live gateway or business-effectiveness targets; remaining gates stay unchecked.
+
+### Current development status — 2026-11-12 (Asia/Kolkata)
+
+- The local foundation and deterministic preview remain available without a gateway. The
+  implementation now also contains the sole grounded model wrapper, five-node LangGraph
+  workflow with persisted per-item review interrupts, independent platform compliance,
+  stability/damping, deterministic bands, three modes, versioned human decisions, fenced
+  execution/revert, durable Commerce recovery, and append-only evidence.
+- Realized readback and bounded learning use complete, mature Commerce HTTP observations;
+  static seed history does not invent future post-push sales. Missing outcomes remain
+  pending. One/many-SKU scenarios, stress presets, saving, and optional grounded narration
+  reuse the numerical engine.
+- The React workspace includes the review queue/details/ladder, real global mode/halt/loop
+  controls, settings and configurable initial policy, token/cost/cache monitoring, impact/
+  stability/autonomy views, audit filtering/export, and read-only grounded discovery.
+- Lifespan-owned continuous scheduling is explicitly started, never restored at boot,
+  and stops on a failed iteration. Exact/equivalent-context caching, safe local telemetry,
+  optional metadata-only Langfuse, and bounded A2A methods are implemented. The optional
+  remote competitor adapter accepts JSON behind an explicit opt-in; no scraper is claimed.
+- T14/T15 real local-model ingestion/retrieval evidence remains valid. Actual grounded
+  startup pre-flight passes against an isolated local LiteLLM proxy and real embeddings.
+  Its generation probe fails; the running workbench still has no gateway/key/aliases.
+  Runtime model generation has no fabricated fallback. See [local integration](docs/local-gateway.md).
+- The integrated suite passes 451 backend tests (49.55s). Source/rendering checks,
+  29 actual-component DOM interaction tests, and the strict TypeScript/production build
+  pass. The current benchmark artifact is `data/benchmark_selection_result.json`;
+  [validation notes](docs/validation.md) distinguish real
+  local compute/retrieval from an explicitly injected model fixture. Full live-gateway
+  timing and effectiveness are not inferred from fixture timing.
+- Live HTTP checks pass: constrained preview, matched scenario, monitoring/audit and A2A
+  discovery preserve Commerce prices/versions. After restarting the final application,
+  the 500-SKU preview takes 8.736s with an 18.01ms concurrent health response;
+  idempotent real-model upload/retrieval takes 0.646s
+  without restart or a new corpus revision. Evidence is in the ignored `data/*smoke_result.json`
+  artifacts. Historical queues and audit chains remain reachable after newer records;
+  valid audit UUIDs survive redaction while known credentials remain hidden.
+- An evaluation-only [calibration study](docs/calibration.md) measures 72 threshold
+  combinations across two independent 500-SKU seeds. It preserves compliance and selects
+  no new defaults. Revenue uplift and high-confidence price-accuracy targets fail on these
+  fixtures; operational/human outcome targets remain unobserved.
+- Confidence now includes simulated uncertainty of the joint selected-price optimum.
+  Prices, forecasts and baseline remain unchanged; arbitrary overrides/reverts clear the
+  prior optimizer range and retain it only in the immutable earlier revision.
+  [Feasibility evidence](docs/effectiveness-feasibility.md) proves the +5% revenue target
+  unreachable on both recorded fixtures under the existing price bounds, even when
+  relaxing family/tick constraints. No PRD target, baseline or rule was weakened.
+- The isolated [W1–W9 demonstration](docs/acceptance-demo.md) passes 56 cases with
+  stable source hashes. It explicitly uses typed model/embedding and observation-clock
+  fixtures; it does not claim real gateway reliability or mature business outcomes.
+- [Operator runbook](docs/operator-runbook.md) provides reproducible W1–W9 steps;
+  [implementation decisions](docs/decisions.md) records assumptions, policy defaults,
+  lifecycle semantics, and unresolved acceptance. Checkboxes below remain acceptance
+  gates, not a claim that every shipped code path has been verified externally.
+- Browser visual/interaction QA, Windows execution, live gateway/Langfuse/remote-feed
+  access, human labels, mature business effectiveness, and full live-pipeline performance
+  remain unverified. Initial thresholds are not empirically calibrated guarantees.
+  [Browser QA](docs/browser-qa.md) records the service blocker and confirms no browser
+  action or populated fixture was performed.
+- Build authorization comes from the user's explicit development/completion instructions.
   The original PRD remains unchanged and no formal approval status is inferred.
 
 ## How to use this plan
@@ -50,19 +106,19 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T00 — Record approval, resolve contract decisions, and establish calibration fixtures
 
-- [ ] Record the PRD approval state and review the proposed choices in `design.md` before
+- [x] Record the PRD approval state and review the proposed choices in `design.md` before
   product implementation. Resolve the decision register in `requirement.md`; retain unresolved
   items explicitly rather than treating draft designs as approved policy.
-- [ ] Specify currency precision, margin formula, forecast horizon, interval coverage,
+- [x] Specify currency precision, margin formula, forecast horizon, interval coverage,
   objective weighting, minimum sample rules, quality severity, candidate price grid, and
   deterministic random-seed handling. Select and record development hardware for benchmarks.
-- [ ] Resolve API-key input versus the ban on client-held credentials; evidence snapshots
+- [x] Resolve API-key input versus the ban on client-held credentials; evidence snapshots
   versus business-data ownership; optional ingestion failure versus Commerce outage; and
   insufficient-history Review versus the Escalate example in PRD §9.3.
-- [ ] Define the Autonomous hold window, mode-change behavior for pending work, the
+- [x] Define the Autonomous hold window, mode-change behavior for pending work, the
   boundary between pending and already-sent pushes, and revert behavior if the prior price
   violates current rules. Preserve compliance veto throughout.
-- [ ] Preserve FR-070's S priority while flagging §5.9's broader must-have statement.
+- [x] Preserve FR-070's S priority while flagging §5.9's broader must-have statement.
   Keep FR-107, FR-108, and FR-111 as M unless a PRD amendment authorizes their removal.
 - **Done when:** choices, remaining open questions, approved scope, and reproducible fixture
   definitions are recorded. Tune numeric thresholds in T46 rather than inventing approved values.
@@ -72,7 +128,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T01 — Establish application structure and runtime boundaries [M]
 
-- [ ] Create separate Commerce, pricing-platform, and React/Vite workspaces; use Python
+- [x] Create separate Commerce, pricing-platform, and React/Vite workspaces; use Python
   `venv`, Node >=20.19 (PRD preference: 22.x LTS), and local embedded storage only.
 - **Done when:** services start on 8001/8000/5173; the browser accesses only the platform;
   architecture checks reject platform access to Commerce SQLite or Commerce implementation
@@ -82,7 +138,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T02 — Define typed configuration, contracts, and safe runtime settings [M]
 
-- [ ] Add Pydantic environment validation, typed API/agent schemas, configuration-driven
+- [x] Add Pydantic environment validation, typed API/agent schemas, configuration-driven
   gateway role aliases, in-memory runtime secrets, and one corporate-CA/TLS helper.
 - **Done when:** invalid settings fail with actionable errors; keys never enter persistent
   files, responses, logs, traces, or caches; insecure TLS is disabled by default, requires
@@ -93,7 +149,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T03 — Implement local persistence and migrations [M]
 
-- [ ] Add Commerce-owned catalog, sales, inventory, price book/history, and batch receipts;
+- [x] Add Commerce-owned catalog, sales, inventory, price book/history, and batch receipts;
   platform-owned run checkpoints, recommendation evidence, decisions, audit, scenarios,
   policy versions, learning state, and loop history; and a separate cache database.
 - **Done when:** `commerce.db` is accessible only to Commerce; `app.db` and `llm_cache.db`
@@ -104,7 +160,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T04 — Generate seeded synthetic retail fixtures [M]
 
-- [ ] Generate at least a 500-SKU category with catalog families, historical transactions,
+- [x] Generate at least a 500-SKU category with catalog families, historical transactions,
   inventory, competitor prices, seasonality, promotions, and known per-SKU elasticity.
 - **Done when:** the same seed reproduces fixtures; sparse, stale, anomalous, conflicting,
   oscillating, and high-volatility cases are available; ground-truth elasticity is reserved
@@ -113,7 +169,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T05 — Expose Commerce HTTP endpoints and independent validation [M]
 
-- [ ] Implement health, catalog, sales, inventory, current prices, batch price writes,
+- [x] Implement health, catalog, sales, inventory, current prices, batch price writes,
   and price history. Define versioned records and per-item batch outcomes.
 - **Done when:** endpoint contracts run against `commerce.db`; Commerce independently
   rejects invalid prices; every accepted write stores prior/new prices and a receipt;
@@ -123,7 +179,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T06 — Add cross-platform pre-flight and ordered startup [M]
 
-- [ ] Create `startup.sh` and `startup.bat` with venv, Node, environment, storage permissions,
+- [x] Create `startup.sh` and `startup.bat` with venv, Node, environment, storage permissions,
   port, gateway-model/embedding availability, and Commerce health checks.
 - **Done when:** Unix and Windows startup paths are exercised or any unavailable platform
   verification is recorded; failures name a remedy; Commerce starts before platform runs
@@ -132,11 +188,31 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 - **Depends on:** T01–T05. **Requirements:** FR-074, FR-075, FR-076; NFR-001, NFR-002,
   NFR-003, NFR-016, NFR-022, NFR-026; PRD §11 model/embedding/TLS checks.
 
+- **Implementation evidence (2026-11-09):** Code and mocked gateway/pre-flight checks are implemented. Windows execution is recorded as unavailable; actual gateway alias availability remains unverified.
+- **Follow-up evidence (2026-11-11):** Preview/grounded startup modes, readiness ordering,
+  child environment and bounded cleanup are tested, including portable Windows-layout
+  seams. Grounded startup checks advertised aliases and real local embeddings and repeats
+  gateway verification inside the platform lifespan. Settings provides runtime model-list
+  verification, invalidated on credential/alias changes. Live positive verification still
+  requires the missing URL, key and four aliases; native Windows unavailability is recorded
+  under this task's permitted unavailable-platform alternative.
+- **Acceptance evidence (2026-11-12, Asia/Kolkata):** Actual
+  `scripts.preflight.check(mode="grounded", skip_ports=True)` passes in 6.589s against
+  an explicit loopback LiteLLM proxy, all four local role aliases, and fresh real MiniLM
+  inference. Dependencies, Node, virtual environment and writable storage also pass.
+  Existing services required skipping ports for this probe; the separate Unix startup
+  already exercised port checks and Commerce → platform → Vite ordering. Native Windows
+  remains unavailable, as permitted above. `data/local_grounded_preflight.json` records
+  zero generations/writes, proxy cleanup and environment restoration. All four aliases
+  map to one installed local model; corporate tiers are not certified. T06's catalog/
+  startup gate is complete, while the failed generation probe leaves PRD A-01's working
+  chat-model acceptance and the live release gates open.
+
 ## M2 — Analysis core
 
 ### T07 — Implement preprocessing and the data-quality gate [M]
 
-- [ ] Normalize and engineer features; handle missing values and outliers; check freshness,
+- [x] Normalize and engineer features; handle missing values and outliers; check freshness,
   completeness, schema, referential integrity, and statistical anomalies.
 - **Done when:** structured reports contain severity/counts and a blocking reason; failed
   data never reaches the numeric pipeline; degraded optional inputs are explicitly marked.
@@ -145,7 +221,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T08 — Fit elasticity with intervals and sample eligibility [M]
 
-- [ ] Implement deterministic regression per SKU with sample count, confidence interval,
+- [x] Implement deterministic regression per SKU with sample count, confidence interval,
   fit diagnostics, and explicit insufficient-history outcomes.
 - **Done when:** seeded synthetic cases recover price-response behavior within documented
   tolerances; missing price variation and sparse history cannot yield a confident estimate;
@@ -154,7 +230,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T09 — Implement competitor and inventory analysis [M; optional scraper C]
 
-- [ ] Add `CompetitorFeed` with the synthetic adapter; compute competitor/market gaps,
+- [x] Add `CompetitorFeed` with the synthetic adapter; compute competitor/market gaps,
   cover days, velocity, and stock flags. Keep live scraping disabled by default.
 - **Done when:** feed replacement does not change callers; zero demand/stock and stale
   competitor data have typed outcomes; competitor freshness is available to confidence scoring.
@@ -162,10 +238,10 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T10 — Build the shared Monte Carlo engine [M; stress tests S]
 
-- [ ] Sample upstream elasticity uncertainty, competitor response, cost drift, and seasonal
+- [x] Sample upstream elasticity uncertainty, competitor response, cost drift, and seasonal
   variation for each candidate price. Emit demand/revenue/margin/cover distributions,
   variance, confidence bands, and probability of breaching the margin floor.
-- [ ] Add configurable iterations and demand-collapse, undercut, and cost-spike stress cases.
+- [x] Add configurable iterations and demand-collapse, undercut, and cost-spike stress cases.
 - **Done when:** fixed seed plus identical input/model/configuration reproduces numeric
   results, including parallel execution; changing the fitted elasticity changes forecasts;
   simulation runs off the async event loop. Record interval semantics and assumptions.
@@ -174,7 +250,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T11 — Optimize candidate distributions and aggregate impacts [M]
 
-- [ ] Optimize revenue-weighted, margin-weighted, or balanced objectives under price bounds,
+- [x] Optimize revenue-weighted, margin-weighted, or balanced objectives under price bounds,
   margin floors, elasticity, run constraints, and a damping limit supplied by T21.
 - **Done when:** constraints are enforced deterministically; infeasible SKUs produce a
   reason instead of a fabricated price; SKU and run impact intervals are computed from
@@ -184,7 +260,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T12 — Implement the conventional baseline and evaluation harness [M]
 
-- [ ] Add cost-plus/category-discount pricing and a ground-truth optimum evaluator.
+- [x] Add cost-plus/category-discount pricing and a ground-truth optimum evaluator.
 - **Done when:** baseline and AI evaluations use identical SKU sets, horizons, inputs,
   and outcome assumptions; metrics distinguish forecast comparisons from realized results;
   the baseline uses no AI reasoning or hidden elasticity ground truth.
@@ -192,7 +268,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T13 — Compute inspectable confidence [M]
 
-- [ ] Derive scores from elasticity confidence/sample eligibility, simulation variance,
+- [x] Derive scores from elasticity confidence/sample eligibility, simulation variance,
   quality, competitor freshness, and available forecast-error history.
 - **Done when:** component contributions and confidence-model version are retained;
   sparse/stale/noisy input lowers eligibility rather than claiming certainty; banding
@@ -204,24 +280,40 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T14 — Build persistent retrieval and document ingestion [M; role breadth S]
 
-- [ ] Add local Chroma `PersistentClient`, local `all-MiniLM-L6-v2` embeddings, chunking,
+- [x] Add local Chroma `PersistentClient`, local `all-MiniLM-L6-v2` embeddings, chunking,
   metadata, and the `pricing_policy`, `market_intel`, `product_kb`, `user_uploads` collections.
 - **Done when:** chunks retain source IDs/version metadata; retrieval returns citable
   evidence; local embedding availability and any gateway fallback are explicitly checked;
   role breadth can be configured without allowing a bypass of mandatory grounding.
 - **Depends on:** T02, T03, T06. **Requirements:** FR-038, FR-042, FR-044; NFR-004;
   PRD §4.4 and assumption A-03.
+- **Evidence (2026-11-09):** all 123 backend tests pass; real local model download/checksum, 384-dimensional inference,
+  synthetic-policy ingestion/retrieval, and `--require-embeddings` pre-flight pass. Automated
+  tests cover all four collections, persistence across processes, immutable citations,
+  idempotency, partial-index failure/retry, role limits, token budgets, model separation,
+  and embedding contracts. Gateway availability is checked only when explicitly selected
+  and opted in; its tests use a mock, and no live gateway access is claimed. No T15 browser
+  upload feature or T16 grounded generation is included in this completion.
 
 ### T15 — Support runtime uploads and collection statistics [M]
 
-- [ ] Expose document ingestion status and document/chunk counts with last-updated time.
+- [x] Expose document ingestion status and document/chunk counts with last-updated time.
 - **Done when:** uploads become retrievable without restart; failed/partial ingestion is
   visible; subsequent reasoning uses current uploaded context and its knowledge version.
 - **Depends on:** T14. **Requirements:** FR-039, FR-040, FR-041.
+- **Evidence (2026-11-09):** 167 backend tests and the TypeScript/production build pass.
+  Runtime upload → ready status → updated corpus statistics → retrieval → citation lookup
+  passed against the real local model in the same running app (2.489s). Tests cover version
+  replacement/replay, historical citations, failed/partial publication, multipart body
+  limits and truncation, temporary-file cleanup, safe errors, restart recovery, and owned
+  workers. The global panel refreshes status/counts without restart. The retrieval path
+  includes uploaded context and its current corpus version; actual grounded reasoning
+  consumption remains T16. Browser visual QA was unavailable; build and targeted rendering
+  checks passed. Source PRD and its approval status remain unchanged.
 
 ### T16 — Implement the sole grounded model entry point [M]
 
-- [ ] Route all chat-model use through `GroundedLLM`, LangChain `init_chat_model`, and
+- [x] Route all chat-model use through `GroundedLLM`, LangChain `init_chat_model`, and
   configured LiteLLM aliases. Inject attributed retrieval; redact prompts; enforce typed
   `.with_structured_output(..., method="json_schema")`, one repair-retry, then typed failure.
 - **Done when:** application-logic calls cannot parse raw model JSON; citations must resolve
@@ -232,7 +324,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T17 — Implement Data & Context with concurrent ingestion [M; narration/degradation S]
 
-- [ ] Fetch Commerce data over HTTP and run sales, competitor, inventory, and retrieval
+- [x] Fetch Commerce data over HTTP and run sales, competitor, inventory, and retrieval
   paths concurrently; apply T07 and produce cited competitive synthesis.
 - **Done when:** concurrency is observable; optional failure lowers confidence with a
   reason; required Commerce outage, unusable data, or mandatory-grounding failure halts
@@ -242,7 +334,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T18 — Implement Quantitative and Strategy & Reasoning agents [M]
 
-- [ ] Connect regression → Monte Carlo → constrained optimization; generate grounded
+- [x] Connect regression → Monte Carlo → constrained optimization; generate grounded
   interpretation, assumptions, and rationale from deterministic results.
 - **Done when:** recommendations contain current/proposed price, absolute/percent delta,
   impact intervals, confidence, and valid citations; model output cannot replace computed
@@ -252,7 +344,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T19 — Orchestrate five nodes, checkpoints, and progress [M]
 
-- [ ] Add deterministic LangGraph edges, typed errors, SQLite checkpoints, progress
+- [x] Add deterministic LangGraph edges, typed errors, SQLite checkpoints, progress
   streaming, and true per-item human approval interrupts before Execution.
 - **Done when:** typed gate/execution fixtures demonstrate mixed-item interrupts,
   checkpoint/resume, inspectable node/terminal states, and stream reconnection. Real
@@ -264,7 +356,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T20 — Implement deterministic compliance and redaction gates [M; rule configuration S]
 
-- [ ] Add MAP, margin, maximum change, price-ladder, category-bound, and rounding rules;
+- [x] Add MAP, margin, maximum change, price-ladder, category-bound, and rounding rules;
   evaluated values and pass/fail records; configurable policies; personal-pricing rejection.
 - **Done when:** violations block all approval/push routes in every mode; LLM violation
   explanations cannot change enforcement; manual candidates are checked identically;
@@ -274,7 +366,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T21 — Detect instability, apply damping, and expose convergence [M; cooldown S]
 
-- [ ] Detect directional reversals, recent-price returns, historical/category anomalies,
+- [x] Detect directional reversals, recent-price returns, historical/category anomalies,
   forecast-error trends, and configurable per-SKU minimum change intervals. Supply damping
   bounds before final optimization and validate the final price again.
 - **Done when:** ping-pong fixtures produce a retained oscillation flag for band assignment;
@@ -286,7 +378,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T22 — Assign bands with threshold evidence [M]
 
-- [ ] Implement Escalate-first deterministic banding, then all Auto-approve eligibility
+- [x] Implement Escalate-first deterministic banding, then all Auto-approve eligibility
   checks, otherwise Review; support runtime threshold configuration.
 - **Done when:** exactly one band and all relevant reasons/actual values/thresholds are
   persisted; each of the five escalation triggers independently prevents automatic approval;
@@ -296,7 +388,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T23 — Implement operating modes, hold windows, and kill switch [M]
 
-- [ ] Default to Supervised; implement Assisted automatic eligibility and Autonomous Review
+- [x] Default to Supervised; implement Assisted automatic eligibility and Autonomous Review
   hold/release; audit transitions. Kill stops the loop, cancels pending automatic pushes,
   and resets mode to Supervised atomically with respect to dispatch authorization.
 - **Done when:** the three-mode/three-band policy matrix and dispatch-fence contract checks
@@ -308,10 +400,10 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T24 — Implement human decisions and server-side review validation [M]
 
-- [ ] Add approve/reject, price override with mandatory reason, and written human override
+- [x] Add approve/reject, price override with mandatory reason, and written human override
   for an escalation with a clean compliance verdict; retain immutable recommendation
   revisions and revalidate final prices.
-- [ ] Enforce bulk approval only for actual Review-band items above the confidence threshold
+- [x] Enforce bulk approval only for actual Review-band items above the confidence threshold
   with clean compliance. An Auto-approve-band item queued by Supervised mode keeps its band.
 - **Done when:** stale/conflicting decisions fail explicitly; no UI/API route bypasses
   compliance; human approvals resume graph interrupts; human/system actors are distinguishable.
@@ -320,7 +412,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T25 — Implement append-only audit evidence [M; export S]
 
-- [ ] Record inputs/evidence versions, all five agents, distributions, rule evaluations,
+- [x] Record inputs/evidence versions, all five agents, distributions, rule evaluations,
   stability, band reasons, approvals/overrides, actor/mode, push attempts, and results.
 - **Done when:** records cannot be edited/deleted through application routes; per-SKU chains
   reconstruct decisions; system-only filtering and export work without exposing secrets;
@@ -337,11 +429,13 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 - **Depends on:** T01 UI scaffold, T19, T24, T25. **Requirements:** FR-009, FR-022,
   FR-024, FR-025, FR-026, FR-027, FR-028, FR-070, FR-096, FR-097, FR-118.
 
+- **Implementation evidence (2026-11-09):** Review filters/actions, revision checks, evidence/ladder views, and native keyboard controls are implemented. SSR/safety checks and build pass; actual 1280px keyboard/browser interaction verification remains open.
+
 ## M5 — Commerce execution, feedback, and simulation
 
 ### T27 — Integrate idempotent batch pushes and ambiguous-result recovery [M]
 
-- [ ] Implement the HTTP Commerce adapter with persisted batch keys, item receipts,
+- [x] Implement the HTTP Commerce adapter with persisted batch keys, item receipts,
   independent rejection reasons, bounded transport recovery, and current-price/version checks.
 - **Done when:** exact replay is a no-op; partial success is first-class; timeouts after
   possible commit reconcile using the original key; retries do not create a second price change.
@@ -350,9 +444,9 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T28 — Complete deterministic Execution and compliant revert [M]
 
-- [ ] Route human and automatic approvals through one dispatch path, rechecking approval,
+- [x] Route human and automatic approvals through one dispatch path, rechecking approval,
   compliance, mode/cancellation state, cooldown, and source-price validity before push.
-- [ ] Add one-action revert from pushed prices using stored prior price and a new linked,
+- [x] Add one-action revert from pushed prices using stored prior price and a new linked,
   idempotent change; surface any current compliance failure instead of bypassing it.
 - **Done when:** no Execution LLM call exists; applied/rejected/unknown outcomes are visible
   per SKU; auto changes retain prior prices; retries, kill, manual intervention, and restart
@@ -362,7 +456,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T29 — Read realized outcomes and compute forecast error [M]
 
-- [ ] Fetch post-push aggregate sales over HTTP; align observation windows with forecasts
+- [x] Fetch post-push aggregate sales over HTTP; align observation windows with forecasts
   and the baseline; persist provenance, completeness, per-SKU error, and convergence series.
 - **Done when:** missing/immature outcomes are pending rather than zero; repeated readback
   does not double-count observations; both SKU and run forecasts compare to actuals; later
@@ -372,7 +466,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T30 — Refine elasticity and uncertainty with bounded learning [M]
 
-- [ ] Update estimates using new post-price-change evidence; calibrate Monte Carlo inputs
+- [x] Update estimates using new post-price-change evidence; calibrate Monte Carlo inputs
   from forecast residuals; cap and log estimate changes with before/after model versions.
 - **Done when:** subsequent runs consume learned state; stale/duplicate data cannot update
   twice; good evidence can tighten calibrated intervals without forcing unjustified narrowing;
@@ -382,9 +476,9 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T31 — Expose shared-engine what-if scenarios [M; saving/narration/stress S]
 
-- [ ] Support arbitrary one/many-SKU prices and configurable horizons through T10; return
+- [x] Support arbitrary one/many-SKU prices and configurable horizons through T10; return
   demand/revenue/margin/cover distributions, explicit assumptions, and margin-breach probability.
-- [ ] Add saved/named scenarios, side-by-side AI/baseline comparisons, grounded narration,
+- [x] Add saved/named scenarios, side-by-side AI/baseline comparisons, grounded narration,
   and stress presets without mutating the live price book.
 - **Done when:** matched scenario/recommendation inputs and seed yield matched numeric
   forecasts; inputs, assumptions, and versions are retained; no scenario becomes an approval.
@@ -401,6 +495,8 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 - **Depends on:** T31, T33 theme tokens. **Requirements:** FR-045, FR-046, FR-047,
   FR-048, FR-049, FR-050, FR-106, FR-119; NFR-010.
 
+- **Implementation evidence (2026-11-09):** One/many-SKU simulation, comparisons, saving, stress, and narrative controls are implemented. Numerical scenario latency is measured; both-theme browser visual verification remains open.
+
 ## M6 — UI completion
 
 ### T33 — Complete the application shell and persistent global controls [M]
@@ -412,9 +508,11 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 - **Depends on:** T01, T02. **Requirements:** FR-062, FR-063, FR-064, FR-118,
   FR-119; NFR-009.
 
+- **Implementation evidence (2026-11-09):** The persistent shell, Router, vector icons, theme tokens/preference, and common states are implemented. Browser-rendered contrast and <=500ms UI interaction measurement remain unverified.
+
 ### T34 — Add runtime gateway settings and LLM monitor [M]
 
-- [ ] Add the global gear drawer with URL/port/key inputs, iOS-style disable-verification
+- [x] Add the global gear drawer with URL/port/key inputs, iOS-style disable-verification
   toggle, and live cache stats; show active calls, input/output tokens, and estimated cost
   in the header, with LiteLLM fallback rates for unpriced models.
 - **Done when:** changes apply without restart through validated server settings; browser
@@ -425,7 +523,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T35 — Build the universal grounding panel [M]
 
-- [ ] Add runtime document upload, ingestion status, per-collection counts/update time,
+- [x] Add runtime document upload, ingestion status, per-collection counts/update time,
   and source inspection through platform APIs.
 - **Done when:** the panel is globally available; newly uploaded context affects a subsequent
   grounded recommendation without restart; ingestion failures are actionable.
@@ -433,7 +531,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T36 — Build impact, baseline, stability, and autonomy dashboards [M]
 
-- [ ] Show forecast/realized revenue and margin, acceptance, AI/baseline comparisons,
+- [x] Show forecast/realized revenue and margin, acceptance, AI/baseline comparisons,
   oscillation/damping/error trends, bands, auto-approve share, escalation causes, and mode history.
 - **Done when:** metrics identify scope, horizon, denominator, and forecast/realized status;
   missing feedback is visible; widening error warns; auto decisions remain inspectable.
@@ -442,7 +540,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T37 — Build run history and the audit timeline [M; export S]
 
-- [ ] Show run status, duration, token cost, outcome, live nodes, complete SKU evidence,
+- [x] Show run status, duration, token cost, outcome, live nodes, complete SKU evidence,
   rules, approvals, and push results; add automatic-only filter and audit export.
 - **Done when:** a reviewer can reconstruct a human or automatic price change from cited
   inputs to Commerce receipt, including partial failures; exporting cannot change history.
@@ -451,7 +549,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T38 — Add persistent mode, kill, and loop controls [M]
 
-- [ ] Put current mode and its switch in the global header; provide a distinct kill
+- [x] Put current mode and its switch in the global header; provide a distinct kill
   switch with exactly one confirmation; add loop start/stop, interval/scope, count,
   countdown, decisions, and a running indicator across every route.
 - **Done when:** backend acknowledgement updates state; kill clears pending automatic work
@@ -460,13 +558,20 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 - **Depends on:** T23, T33, T39. **Requirements:**
   FR-101, FR-102, FR-115, FR-116, FR-117, FR-120.
 
+- **Acceptance evidence (2026-11-11):** [Actual React DOM interactions](docs/ui-acceptance.md)
+  verify pending/acknowledged mode changes, exactly one halt confirmation, cancel/error paths,
+  acknowledged Supervised/Loop off, scope/constraints, iteration counts, stop acknowledgement,
+  and disconnected controls. Backend governance/loop tests verify actual cancellation and
+  dispatch fencing. These satisfy this task's functional criteria without claiming browser
+  pixels, viewport layout or render latency; those remain T26/T32/T33/T46 gates.
+
 ## M7 — Continuous loop and hardening
 
 ### T39 — Implement the lifespan-managed interval loop [M; iteration cap S]
 
-- [ ] Add UI-triggered loop start/stop and persisted sessions/iterations/decisions. Run the
+- [x] Add UI-triggered loop start/stop and persisted sessions/iterations/decisions. Run the
   full pipeline per iteration using current policy/mode; prohibit overlapping iterations.
-- [ ] Keep scheduling off at every boot, stop on any failed iteration with visible error,
+- [x] Keep scheduling off at every boot, stop on any failed iteration with visible error,
   support a configurable session cap, and stop/checkpoint cleanly on shutdown or kill.
 - **Done when:** restart never restarts scheduling or timers automatically; queued review
   items are distinguished from a failed iteration; failure cannot silently schedule another
@@ -476,7 +581,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T40 — Add persistent exact and semantic LLM caching [M]
 
-- [ ] Implement two-tier caching in `llm_cache.db` with hit/miss statistics and validated
+- [x] Implement two-tier caching in `llm_cache.db` with hit/miss statistics and validated
   response reuse. Include model, schema/prompt, role, evidence/knowledge, numeric input,
   and relevant policy versions in cache eligibility; never store API keys.
 - **Done when:** changed price/policy/upload inputs cannot reuse stale decisions or citations;
@@ -486,7 +591,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T41 — Add redacted tracing and nonblocking cost telemetry [M]
 
-- [ ] Emit structured `structlog` events, Langfuse callbacks, and an always-on local JSONL
+- [x] Emit structured `structlog` events, Langfuse callbacks, and an always-on local JSONL
   sink for node/tool/model latency, tokens, model, cache outcome, and run/agent cost.
 - **Done when:** local traces survive Langfuse egress failure; sales data/prompts are not
   sent to an external telemetry sink contrary to NFR-014; secrets/PII are redacted;
@@ -496,7 +601,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T42 — Harden retries, cancellation, and recovery [M]
 
-- [ ] Add bounded exponential backoff for gateway 429/500/502/503/504; handle SIGINT/SIGTERM
+- [x] Add bounded exponential backoff for gateway 429/500/502/503/504; handle SIGINT/SIGTERM
   by stopping new work, checkpointing runs, flushing telemetry, and closing SQLite.
 - **Done when:** interruption at analysis, review, and ambiguous Commerce commit recovers
   without lost audit or duplicate writes; resumed automatic work requires fresh execution
@@ -506,7 +611,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T43 — Expose bounded A2A interoperability [S]
 
-- [ ] Add `/.well-known/agent-card.json` and JSON-RPC `message/send` / `tasks/get`.
+- [x] Add `/.well-known/agent-card.json` and JSON-RPC `message/send` / `tasks/get`.
 - **Done when:** advertised capabilities match implementation; external calls share the
   same grounding, compliance, review, and idempotency paths; no unrequested full task
   lifecycle or agent negotiation is introduced.
@@ -514,7 +619,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T44 — Implement optional discovery interfaces [C]
 
-- [ ] Add natural-language recommendation queries using the grounded router/model path;
+- [x] Add natural-language recommendation queries using the grounded router/model path;
   implement the optional live competitor adapter behind an explicit disabled-by-default flag.
 - **Done when:** chat cannot approve or push via an alternate route; the synthetic demo
   remains reliable when live scraping is unavailable; shared feed contracts remain unchanged.
@@ -523,11 +628,11 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 
 ### T45 — Run the release correctness and safety suite [M]
 
-- [ ] Automate the golden path; failed quality/grounding; structured-output repair and typed
+- [x] Automate the golden path; failed quality/grounding; structured-output repair and typed
   failure; every compliance rule in every mode; all band boundaries; bulk/override rules;
   partial success; idempotent replay; single-engine simulation; numeric seed reproducibility;
   kill versus dispatch/hold timers; loop failure/boot behavior; and interruption/recovery.
-- [ ] Enforce HTTP/DB ownership boundaries, the sole model wrapper, secret redaction,
+- [x] Enforce HTTP/DB ownership boundaries, the sole model wrapper, secret redaction,
   no Execution LLM, module separation, and the 400-LOC source-file ceiling.
 - **Done when:** acceptance fixtures demonstrate zero violating Commerce writes, zero
   duplicate writes, zero automatic-path verification omissions, zero continuing loop
@@ -557,15 +662,33 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
 - **Depends on:** T12, T13, T30, T32, T36, T39, T40, T41, T45.
 - **Requirements:** FR-021, FR-057, FR-083, FR-087, FR-100, FR-110;
   NFR-006, NFR-007, NFR-008, NFR-009, NFR-010, NFR-037, NFR-038; PRD §9 and §11.
+- **Evidence (2026-11-10):** [validation](docs/validation.md) records numerical, real-local-RAG
+  cache, scenario and five-node model-fixture timings. [Calibration](docs/calibration.md)
+  records independent-seed threshold tradeoffs and failed targets without changing policy.
+  Live gateway validity/latency, Windows/browser acceptance and mature human/realized
+  metrics remain open; no fixture result is substituted for those observations.
+- **Follow-up (2026-11-11):** The original revenue target is infeasible for the recorded
+  fixtures: relaxed legal forecast-grid maxima remain 2.951% / 3.269% below the raw
+  baseline; even a projected compliant-baseline counterfactual permits at most 2.494% /
+  2.195% pure-revenue uplift. Selection-confidence correction reduces overconfidence but
+  nine high-confidence price errors remain per seed. Latest cache p95 is 25.40ms but its
+  124.92ms maximum under concurrent load misses a strict all-hits <100ms interpretation.
+  See [the proof and preserved denominators](docs/effectiveness-feasibility.md). Product-owner
+  evaluation decisions and actual human/realized data are required; this gate stays open.
 
 ### T47 — Complete operator documentation and demonstrate release scope [M]
 
-- [ ] Document startup on supported platforms, configuration/model aliases, CA trust and
+- [x] Document startup on supported platforms, configuration/model aliases, CA trust and
   bypass controls, secret lifecycle, data generation, thresholds, checkpoints/resume,
   loop start/stop/failure, kill/revert semantics, telemetry fallback, and recovery.
 - [ ] Demonstrate W1–W9: generated run, banded review, what-if, upload grounding, partial
   push/replay/revert, realized feedback/learning, audit reconstruction, runtime settings,
   and explicit-start continuous loop with failure stop. Show Supervised by default.
+- **Local demonstration evidence (2026-11-11):** The isolated runner covers all nine
+  workflows with 56 passing cases, real HTTP/graph/storage paths, declared model/embedding
+  fixtures and a simulated mature-outcome clock. Source hash and JUnit cases are retained.
+  The full release demonstration remains open because real gateway generation, native UI
+  checks and effectiveness acceptance are not supplied by those fixtures.
 - **Done when:** every included M/S/C requirement has implementation and validation evidence;
   unmet targets and deferred S/C features are listed; the owner records release readiness.
   If time compresses, any cut to M feedback or Autonomous mode is a PRD amendment, not an

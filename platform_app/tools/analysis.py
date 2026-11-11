@@ -12,9 +12,12 @@ from .monte_carlo import (
 )
 from .optimization import (
     baseline_policy, baseline_price, feasible_prices, money,
-    objective_scores, objective_weights, select_family_prices,
+    objective_scores, objective_sample_scores, objective_weights, select_family_prices,
 )
 from .quality import competitor_freshness, quality_report
+from .refinement import refine_estimate
+from .selection import SELECTION_VERSION, selection_uncertainty
+from platform_app.constraints import apply_run_constraints
 
 
 class AnalysisError(ValueError):
@@ -43,7 +46,8 @@ def _check_inputs(catalog, sales, inventory, competitors, iterations, seed, hori
     return quality
 
 
-def _confidence(estimate, forecast: dict, competitors: list[dict], quality: dict) -> tuple[float, dict]:
+def _confidence(estimate, forecast: dict, competitors: list[dict], quality: dict, learning=None, selection=None) -> tuple[float, dict]:
+    calibrated = bool(learning and learning.get("observations", 0) >= 3 and learning.get("observed_days", 0) >= 30)
     width = estimate.upper - estimate.lower
     elasticity_score = 1 / (1 + width)
     if estimate.estimate >= 0:
@@ -51,7 +55,7 @@ def _confidence(estimate, forecast: dict, competitors: list[dict], quality: dict
     elif estimate.upper >= 0:
         elasticity_score *= 0.5
     revenue = forecast["revenue"]
-    variation = revenue["variance"] ** 0.5 / max(revenue["mean"], 1)
+    variation = revenue["variance"] ** 0.5 / max(abs(revenue["mean"]), 1e-9)
     components = {
         "elasticity_precision": elasticity_score,
         "sample_sufficiency": min(estimate.sample_size / 120, 1),
@@ -61,8 +65,20 @@ def _confidence(estimate, forecast: dict, competitors: list[dict], quality: dict
     }
     weights = {"elasticity_precision": 0.4, "sample_sufficiency": 0.15,
                "simulation_stability": 0.15, "data_quality": 0.15, "competitor_freshness": 0.15}
+    if calibrated:
+        weights = {key: value * .8 for key, value in weights.items()}
+        weights["realized_accuracy"] = .2
+        components["realized_accuracy"] = max(0., 1 - learning.get("mean_absolute_error", 1.))
     score = sum(components[key] * weights[key] for key in components)
-    return round(score, 4), {**components, "weights": weights, "calibrated": False}
+    base_score = score
+    if selection:
+        score = min(score, selection["precision_cap"])
+    return round(score, 4), {**components, "weights": weights, "calibrated": calibrated,
+                           "model_version": (learning or {}).get("version", "initial-v1"),
+                           "confidence_model_version": "confidence-v2-selection",
+                           "base_score": round(base_score, 4),
+                           "selection_precision_cap": selection["precision_cap"] if selection else None,
+                           "selection_status": "evaluated" if selection else "not_evaluated_for_arbitrary_candidate"}
 
 
 def _render_preview(item: dict, price: float, quality: dict, iterations: int, seed: int, horizon_days: int):
@@ -74,7 +90,7 @@ def _render_preview(item: dict, price: float, quality: dict, iterations: int, se
     forecast = forecast_summary(draws, 0, product)
     current_forecast = forecast_summary(draws, 1, product)
     baseline_forecast = forecast_summary(draws, 2, product)
-    confidence, factors = _confidence(estimate, forecast, item["competitors"], quality)
+    confidence, factors = _confidence(estimate, forecast, item["competitors"], quality, product.get("_learning"), item.get("selection"))
     competitor_prices = [float(record["price"]) for record in item["competitors"]]
     market_price = float(np.median(competitor_prices)) if competitor_prices else None
     cover = float(item["inventory"]["on_hand"]) / max(estimate.daily_demand, 1e-9)
@@ -90,6 +106,7 @@ def _render_preview(item: dict, price: float, quality: dict, iterations: int, se
         "price_version": product.get("price_version"), "elasticity": estimate.public(),
         "forecast": forecast, "current_forecast": current_forecast, "impact": impacts,
         "confidence": confidence, "confidence_factors": factors,
+        "optimal_price_uncertainty": item.get("selection"),
         "baseline": {"price": money(baseline), "forecast": baseline_forecast,
                      "method": "cost-plus with category discounts; not an approved price",
                      "policy": baseline_policy(product)},
@@ -107,6 +124,8 @@ def _render_preview(item: dict, price: float, quality: dict, iterations: int, se
             "Competitor response has 3.5% price uncertainty (12% when absent), 0.4 demand transmission, and 0.15 price follow-through.",
             "Forecast represents a non-promoted average weekday at the latest observed seasonal level.",
             "Quantitative preview requires grounded reasoning, validation, and approval before price changes.",
+            ("Confidence is capped by simulated joint optimizer price precision; this is not empirical price-accuracy calibration."
+             if item.get("selection") else "An arbitrary candidate forecast has no catalog optimizer decision-precision verdict."),
         ],
         "evidence_sources": [f"commerce://catalog/{product['sku']}", f"commerce://sales/{product['sku']}",
                              f"commerce://inventory/{product['sku']}"],
@@ -118,8 +137,13 @@ def _render_preview(item: dict, price: float, quality: dict, iterations: int, se
 def analyze_catalog(
     catalog: list[dict], sales: list[dict], inventory: list[dict], competitors: list[dict],
     objective: str = "balanced", iterations: int = 1000, seed: int = 42, horizon_days: int = 14,
+    damping: dict | None = None, learning: dict | None = None,
+    family_catalog: list[dict] | None = None,
+    run_constraints: dict | None = None,
 ) -> dict:
+    catalog = [{**product, "_learning": (learning or {}).get(product["sku"], {})} for product in catalog]
     quality = _check_inputs(catalog, sales, inventory, competitors, iterations, seed, horizon_days)
+    catalog = apply_run_constraints(catalog, run_constraints)
     if objective not in {"balanced", "revenue-weighted", "margin-weighted", "revenue", "margin"}:
         raise AnalysisError("Unknown objective; choose balanced, revenue-weighted, or margin-weighted.", "invalid_objective")
     sales_by_sku, competitors_by_sku = _group(sales), _group(competitors)
@@ -136,7 +160,8 @@ def analyze_catalog(
         except InsufficientHistory as error:
             skipped.append({"sku": sku, "status": "insufficient_history", "reason": str(error), "confidence": 0})
             continue
-        prices = feasible_prices(product)
+        estimate = refine_estimate(estimate, product.get("_learning"))
+        prices = feasible_prices(product, (damping or {}).get(sku))
         if not prices:
             skipped.append({"sku": sku, "status": "no_feasible_price", "reason": "Price constraints have no feasible intersection."})
             continue
@@ -144,8 +169,13 @@ def analyze_catalog(
                                  prices, iterations, seed, horizon_days)
         prepared.append({"product": product, "estimate": estimate, "inventory": inventory_by_sku[sku],
                          "competitors": competitors_by_sku[sku], "prices": prices,
-                         "scores": objective_scores(draws, objective)})
-    selected = select_family_prices(prepared, catalog)
+                         "scores": objective_scores(draws, objective),
+                         "sample_scores": objective_sample_scores(draws, objective)})
+    scoped = {p["sku"]: p for p in catalog}
+    family_evidence = {p["sku"]: p for p in (family_catalog or catalog)}
+    family_evidence.update(scoped)
+    selected = select_family_prices(prepared, list(family_evidence.values()))
+    selection = selection_uncertainty(prepared, list(family_evidence.values()), selected)
     recommendations = []
     totals = {metric: np.zeros((3, iterations)) for metric in ["revenue", "gross_profit", "units"]}
     for item in prepared:
@@ -154,7 +184,9 @@ def analyze_catalog(
             skipped.append({"sku": sku, "status": "no_feasible_family_price",
                             "reason": "No coherent monotone price ladder satisfies all family constraints."})
             continue
+        item["selection"] = selection.get(sku)
         report, draws = _render_preview(item, selected[sku], quality, iterations, seed, horizon_days)
+        report["run_constraints"] = run_constraints
         recommendations.append(report)
         for metric in totals:
             totals[metric] += draws[metric]
@@ -172,13 +204,19 @@ def analyze_catalog(
             "configuration": {**configuration(iterations, seed, horizon_days), "objective": objective,
                               "objective_weights": objective_weights(objective),
                               "objective_normalization": "Per-SKU candidate maximum expected revenue and absolute expected gross profit, each floored at one.",
-                              "baseline_policy": baseline_policy()}}
+                              "baseline_policy": baseline_policy(),
+                              "learning_versions": {p["sku"]: p["_learning"].get("version", "initial-v1") for p in catalog},
+                              "selection_uncertainty_method": SELECTION_VERSION,
+                              "confidence_model_version": "confidence-v2-selection",
+                              "damping_bounds": damping or {}, "run_constraints": run_constraints}}
 
 
 def simulate_sku(
     product: dict, sales: list[dict], inventory: list[dict] | dict, competitors: list[dict],
     candidate_price: float | str, iterations: int = 1000, seed: int = 42, horizon_days: int = 14,
+    learning: dict | None = None, stress: str = "none",
 ) -> dict:
+    product = {**product, "_learning": learning or {}, "_stress": stress}
     try:
         monetary_price = Decimal(str(candidate_price))
         tick = Decimal(str(product.get("rounding_increment", "0.01")))
@@ -199,8 +237,10 @@ def simulate_sku(
         estimate = estimate_elasticity(product, sales)
     except InsufficientHistory as error:
         raise AnalysisError(str(error), "insufficient_history", quality) from error
+    estimate = refine_estimate(estimate, learning)
     item = {"product": product, "estimate": estimate, "inventory": inventories[0], "competitors": competitors}
     report, _ = _render_preview(item, price, quality, iterations, seed, horizon_days)
     return {**report, "type": "quantitative_preview", "quality": quality,
             "configuration": {**configuration(iterations, seed, horizon_days),
-                              "baseline_policy": baseline_policy()}}
+                              "baseline_policy": baseline_policy(), "stress": stress,
+                              "learning_version": (learning or {}).get("version", "initial-v1")}}

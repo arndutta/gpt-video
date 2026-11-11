@@ -6,6 +6,10 @@ from platform_app.commerce_client import CommerceClient, CommerceUnavailable, re
 from platform_app.config import RunRequest, Settings
 from platform_app.storage import Store
 from platform_app.tools import AnalysisError, analyze_catalog
+from platform_app.feeds import optional_quotes
+from platform_app.governance import GovernancePolicy
+from platform_app.governance.stability import damping_bounds
+from platform_app.tools.context import effective_catalog
 
 
 class RunManager:
@@ -15,6 +19,7 @@ class RunManager:
         self.workers: set[asyncio.Task] = set()
         self.busy = False
         self.stopping = False
+        self.governance = self.feedback = None
 
     def start(self, request: RunRequest) -> dict:
         if self.busy or self.stopping:
@@ -35,14 +40,25 @@ class RunManager:
             self.store.update_run(run_id, "running", "ingesting")
             context, competitors = await asyncio.gather(
                 self.commerce.context(category=request.category, sku_ids=request.sku_ids),
-                asyncio.to_thread(read_competitors, self.settings.data_dir))
+                optional_quotes(self.settings))
             skus = {item["sku"] for item in context["catalog"]}
             competitors = [item for item in competitors if item.get("sku") in skus]
+            family_catalog, damping, learning, policy_version = None, None, None, None
+            if self.governance is not None:
+                policy_version = self.governance.mode()["policy_version"]
+                policy = GovernancePolicy(**self.governance.policy()["thresholds"])
+                family, history = await asyncio.gather(self.commerce.all("/catalog"), self.commerce.all("/price-history"))
+                family_catalog = family["items"]
+                context["catalog"] = effective_catalog(context["catalog"], policy)
+                damping = {p["sku"]: damping_bounds(p, history["items"], policy)[:2] for p in context["catalog"]}
+                learning = self.feedback.states() if self.feedback else None
             self.store.update_run(run_id, "running", "quantifying")
             report = await self.run_cpu(
                 analyze_catalog, context["catalog"], context["sales"], context["inventory"], competitors,
                 objective=request.objective, iterations=request.iterations, seed=request.seed,
-                horizon_days=request.horizon_days)
+                horizon_days=request.horizon_days, damping=damping, learning=learning, family_catalog=family_catalog,
+                run_constraints=request.constraints.model_dump(exclude_none=True) if request.constraints else None)
+            report["configuration"]["numeric_policy_version"] = policy_version
             report["kind"] = "quantitative_preview"
             report["summary"] = report.get("aggregate", {})
             report["source_as_of"] = context["as_of"]

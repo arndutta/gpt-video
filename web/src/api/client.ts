@@ -1,12 +1,13 @@
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, {
     ...init,
-    headers: { ...(init?.body ? { 'Content-Type': 'application/json' } : {}), ...init?.headers },
+    headers: { ...(init?.body && !(init.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}), ...init?.headers },
   });
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const detail = body && typeof body === 'object' && 'detail' in body ? body.detail : null;
-    const message = typeof detail === 'string' ? detail : detail ? JSON.stringify(detail) : `Request failed (${response.status})`;
+    const detailMessage = detail && typeof detail === 'object' && 'message' in detail ? detail.message : null;
+    const message = typeof detail === 'string' ? detail : typeof detailMessage === 'string' ? detailMessage : detail ? JSON.stringify(detail) : `Request failed (${response.status})`;
     throw new Error(message);
   }
   return body as T;

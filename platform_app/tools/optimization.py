@@ -41,7 +41,7 @@ def money(value: float | Decimal) -> str:
     return str(Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
 
-def feasible_prices(product: dict) -> list[float]:
+def feasible_prices(product: dict, bounds: tuple[float, float] | None = None) -> list[float]:
     current, cost = Decimal(product["current_price"]), Decimal(product["cost"])
     change = Decimal(str(product.get("max_change_pct", 0.2)))
     margin = Decimal(str(product.get("minimum_margin_pct", 0.15)))
@@ -49,6 +49,9 @@ def feasible_prices(product: dict) -> list[float]:
     lower = max(Decimal(product["map_price"]), Decimal(product["min_price"]),
                 cost / (1 - margin), current * (1 - change))
     upper = min(Decimal(product["max_price"]), current * (1 + change))
+    if bounds is not None:
+        lower = max(lower, Decimal(str(bounds[0])))
+        upper = min(upper, Decimal(str(bounds[1])))
     if lower > upper:
         return []
     raw = np.linspace(float(lower), float(upper), 21).tolist() + [float(current)]
@@ -78,6 +81,15 @@ def objective_scores(draws: dict[str, np.ndarray], objective: str) -> np.ndarray
     weights = objective_weights(objective)
     revenue_weight, profit_weight = weights["revenue"], weights["gross_profit"]
     return revenue_weight * revenues / max(float(np.max(revenues)), 1) + profit_weight * profits / max(float(np.max(np.abs(profits))), 1)
+
+
+def objective_sample_scores(draws: dict[str, np.ndarray], objective: str) -> np.ndarray:
+    """Sample scores use the same fixed normalization as the expected objective."""
+    weights = objective_weights(objective)
+    revenue_scale = max(float(np.max(np.mean(draws["revenue"], axis=1))), 1)
+    profit_scale = max(float(np.max(np.abs(np.mean(draws["gross_profit"], axis=1)))), 1)
+    return (weights["revenue"] * draws["revenue"] / revenue_scale
+            + weights["gross_profit"] * draws["gross_profit"] / profit_scale)
 
 
 def select_family_prices(prepared: list[dict], catalog: list[dict]) -> dict[str, float]:

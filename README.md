@@ -1,28 +1,36 @@
 # Retail Pricing Workbench
 
-A local implementation of the [PRD](prd.md), started with the foundation services and a
-working quantitative-preview workflow. Browse the synthetic catalog, fit SKU elasticities,
-compare candidate-price distributions, inspect saved previews, and run single-SKU what-ifs.
+A local SKU-level pricing application with separate Commerce and platform services, a
+React workspace, deterministic elasticity/Monte Carlo optimization, and a five-agent
+grounded workflow. Recommendations retain citations, rule evidence, stability signals,
+approval decisions, and per-item Commerce outcomes.
 
-The platform currently produces **non-executable quantitative previews**. Grounded LLM
-agents, document ingestion, human approvals, autonomy bands, the kill switch, platform price
-execution/revert, learning, and the continuous loop are still pending. Their UI controls
-are disabled or explicitly labeled pending. The Commerce batch-write contract exists for
-integration and tests; the pricing platform does not expose a price-changing route.
+The quantitative preview works without a model gateway. A grounded pricing run requires
+a configured gateway, all four model aliases, and published retrieval evidence. Missing
+grounding or gateway access stops that workflow; there is no fabricated model fallback.
+The app includes Supervised, Assisted, and Autonomous modes, human review, a global halt,
+validated execution/revert, saved scenarios, feedback calibration, and an explicit-start
+interval loop. These are local demonstration capabilities, not production authorization
+or evidence of measured business uplift.
 
-See [requirements](requirement.md), [design](design.md), and the [task plan](task.md).
+Latest verification: **451 backend tests**, **29 DOM interaction tests**, the UI build,
+and the isolated **56-case W1–W9 demonstration** pass. T06 startup checks and T38
+functional acceptance are complete. An isolated local gateway passes real alias and
+embedding pre-flight checks, but its generation probe fails; see
+[local gateway evidence](docs/local-gateway.md). Working gateway generation,
+actual browser/viewport validation and product
+effectiveness gates remain open; [the feasibility proof](docs/effectiveness-feasibility.md)
+shows why the unchanged +5% revenue target cannot be met on the current fixtures.
+
+See the [task plan](task.md), [requirements](requirement.md), [design](design.md),
+[implementation decisions](docs/decisions.md), and [operator runbook](docs/operator-runbook.md).
+The source [PRD](prd.md) is unchanged; its formal approval state remains unrecorded.
 
 ## Run locally
 
-Requirements: Python 3.11+, a Python virtual environment, and Node 20.19+ or a supported
-newer version (22.12+ recommended). No Docker, external database server, or administrator
-installation is used. Dependencies are pinned in `requirements.lock` and `web/package-lock.json`.
-
-On this machine, modern Node is already installed under `/opt/homebrew/bin`; the default
-shell selects an older Node. Use `export PATH="/opt/homebrew/bin:$PATH"` before npm commands.
-The startup helper detects that newer installation automatically.
-
-macOS/Linux:
+Use Python 3.11+ in a virtual environment and Node >=20.19 (or supported 22.12+).
+Dependencies are pinned in `requirements.lock` and `web/package-lock.json`. No Docker,
+external database, cloud deployment, or administrator installation is required.
 
 ```sh
 python3 -m venv .venv
@@ -33,153 +41,203 @@ cd ..
 ./startup.sh --seed
 ```
 
-Windows PowerShell or Command Prompt:
+On this Mac, use `export PATH="/opt/homebrew/bin:$PATH"` before npm commands; the normal
+shell selects an older Node. The launcher detects the supported installation automatically.
+On Windows use `py -3.11 -m venv .venv`, `.venv\Scripts\python`, and `startup.bat --seed`.
+The Windows entry point is provided; execution on Windows is unverified here.
 
-```text
-py -3.11 -m venv .venv
-.venv\Scripts\python -m pip install -r requirements.lock
-cd web
-npm ci
-cd ..
-startup.bat --seed
-```
+Open **http://127.0.0.1:5173**. `--seed` creates 500 synthetic SKUs and 180 days of sales
+only when Commerce is empty. Existing data is preserved. Ctrl+C stops the three owned
+processes. Startup order is Commerce → platform → Vite. All listeners bind to loopback.
 
-Open **http://127.0.0.1:5173**. `--seed` populates an empty database with 500 synthetic
-SKUs and 180 days of history; it preserves an existing catalog. Press Ctrl+C to stop the
-three owned processes. A failed service causes the supervisor to stop its remaining children.
-
-The browser calls only the platform through Vite's `/api` proxy. The platform retrieves
-Commerce data over HTTP; it never opens the Commerce database or imports Commerce code.
-
-| Process | Port | Storage |
+| Service | URL | Owned storage |
 |---|---|---|
-| Commerce Service | 8001 | `data/commerce.db` |
-| Pricing platform | 8000 | `data/app.db`, separate WAL `data/llm_cache.db` |
-| React/Vite UI | 5173 | Browser theme preference only |
+| UI | `http://127.0.0.1:5173` | Browser theme preference |
+| Platform | `http://127.0.0.1:8000/docs` | `data/app.db`, `checkpoints.db`, `llm_cache.db`, Chroma, telemetry |
+| Commerce | `http://127.0.0.1:8001/docs` | `data/commerce.db`, price book, receipts/history |
 
-Both API services expose interactive documentation at `/docs`. All servers bind to loopback.
-`startup.bat` is provided but has not been executed on Windows in this development environment.
+The browser uses Vite's `/api` proxy. Platform business reads/writes go through Commerce
+HTTP; the platform never opens Commerce SQLite or imports Commerce implementation code.
+Platform snapshots are immutable decision evidence, not an authoritative second catalog.
 
 ## First workflow
 
-1. Open Product catalog to inspect prices, cost, category, and product families.
-2. Open Pricing runs, select a scope/objective, and run a preview. Full catalog is 500 SKUs.
-3. Inspect a candidate's fitted elasticity, 95% simulation interval, sample size, baseline,
-   confidence factors, and assumptions. Data-quality failures halt the preview; sparse
-   history or unavailable stock is represented as an explicit skipped item.
-4. Select a product in Scenario lab and enter a candidate price. Matching inputs and seed
-   reproduce the forecast from the catalog preview through the same numerical engine.
-5. Inspect history after a restart. Interrupted previews stay visible; start a new preview
-   to obtain fresh inputs. Agent checkpoint/resume is not implemented yet.
+1. Inspect **Product catalog**. In **Pricing runs**, choose **Quantitative preview** to
+   fit elasticity, compare price distributions, and inspect confidence, baseline, and quality.
+2. Prepare local embeddings once with `.venv/bin/python -m scripts.rag prepare`.
+   Open **Knowledge & grounding** and upload `examples/pricing-policy.md` into
+   `pricing_policy`. Wait for **ready** and inspect collection counts.
+   Use **Advanced price constraints** to set a run-only maximum change (%) and optional
+   price floors/ceilings for categories in the chosen scope. Blank fields add no bound;
+   the request cannot relax Commerce compliance rules. The same controls are available
+   when starting a loop.
+3. Open the settings gear. Enter the gateway URL, optional port, a write-only API key,
+   and router/narrator/analyst/strategist aliases that exist at your gateway. Apply settings.
+4. Select **Grounded pricing workflow** in Pricing runs. The fixed graph runs Data &
+   Context → Quantitative → Strategy & Reasoning → Validation & Compliance → Execution.
+   Numerical prices/scores remain tool-computed; generated reasoning must cite supplied sources.
+5. Open **Review queue**. Inspect rule values, thresholds, rationale/citations, stability,
+   family ladders, and forecast bands. Supervised requires human approval for every band.
+   An escalation needs a written human reason; a compliance violation cannot be approved.
+6. Approved changes use the shared deterministic dispatcher. Inspect applied, rejected,
+   stale, or unknown outcomes. An applied change offers **Revert this change**, which
+   creates a fresh, linked change and must pass current rules and Commerce versions.
+7. Explore **Scenario lab**, **Audit trail**, and the overview dashboards. Start the
+   **Loop** only when intended. Scheduling is off after every application restart.
 
-No preview approves or applies a price. Confidence is an initial inspectable score, not
-an empirically calibrated probability. Synthetic performance does not establish real-world
-revenue uplift, causal identification, escalation precision, or forecast coverage.
+Read [W1–W9 operator steps](docs/operator-runbook.md#w1--generate-a-pricing-run) for
+recovery, partial results, feedback maturity, and explicit demonstrations.
 
-## Configuration
+## Configuration and secrets
 
-Startup reads the process environment. `.env.example` lists supported settings but is not
-automatically loaded. Export variables in your shell; keep credentials out of files.
+Startup reads the process environment. `.env.example` documents values; it is **not
+automatically loaded**. Runtime gateway settings are session-only. The masked key field
+clears on submission, keys remain in backend memory, and saved keys never return to the
+browser or enter local storage, audit, telemetry, or LLM cache. Credentials must be supplied
+again after restart unless the launching process already has them.
 
-| Variable | Default / behavior |
+| Variable | Behavior |
 |---|---|
-| `DATA_DIR` | `./data`, platform storage and synthetic competitor adapter files |
-| `COMMERCE_DB_PATH` | `data/commerce.db` when starting Commerce directly; supervisor sets it from `DATA_DIR` |
-| `COMMERCE_URL` | `http://127.0.0.1:8001` |
-| `NODE_BINARY` | Optional path to the supported Node executable |
-| `GATEWAY_URL`, `GATEWAY_PORT` | Optional backend gateway configuration; no chat calls are made yet |
-| `GATEWAY_API_KEY` | Optional process-memory secret; also replaceable through the masked settings form |
-| `LLM_MODEL_ANALYST`, `LLM_MODEL_STRATEGIST` | Aliases for the optional initial gateway readiness probe |
-| `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE` | Preferred corporate CA trust; both backend paths use one TLS helper |
-| `ALLOW_INSECURE_TLS` | `false`; required before the runtime disable-verification toggle is available |
+| `DATA_DIR`, `COMMERCE_URL` | Defaults `./data`, `http://127.0.0.1:8001` |
+| `COMMERCE_DB_PATH` | Direct Commerce path; supervisor derives it from `DATA_DIR` |
+| `NODE_BINARY` | Optional supported Node executable |
+| `GATEWAY_URL`, `GATEWAY_PORT`, `GATEWAY_API_KEY` | Backend gateway configuration; URL commonly includes `/v1` |
+| `LLM_MODEL_ROUTER`, `LLM_MODEL_NARRATOR`, `LLM_MODEL_ANALYST`, `LLM_MODEL_STRATEGIST` | Required configured chat aliases for grounded runs |
+| `LLM_TIMEOUT_SECONDS`, `LLM_TRANSPORT_RETRIES` | Defaults 60 seconds / 2 bounded transient retries |
+| `LLM_INPUT_COST_PER_MILLION`, `LLM_OUTPUT_COST_PER_MILLION` | Configured fallback USD estimates; defaults 0.10 / 0.40 |
+| `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE` | Preferred corporate CA trust through one backend TLS helper |
+| `ALLOW_INSECURE_TLS` | Default false; gates the runtime disable-verification toggle |
+| `LANGFUSE_ENABLED`, `LANGFUSE_HOST`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` | Optional metadata-only tracing; disabled by default |
+| `LIVE_COMPETITOR_ENABLED`, `LIVE_COMPETITOR_URL` | Explicit opt-in remote JSON adapter; synthetic feed is the default |
 
-Runtime gateway settings apply atomically for the session. Keys are write-only, held in
-backend memory, omitted from responses/logs/audit, and cleared from the input on submission.
-They do not survive a restart. Insecure TLS is never the default; enabling the permitted
-prototype toggle emits a warning and a persistent header indicator. The initial browser-entry
-transient follows the proposed write-only interpretation documented in `design.md`.
-
-Optional checks:
+Prefer corporate CA trust. A permitted TLS bypass emits a boot warning and a persistent
+UI indicator. No browser-to-gateway model traffic or production identity/RBAC system is included.
 
 ```sh
 .venv/bin/python -m scripts.preflight --skip-ports
-./startup.sh --require-gateway
+.venv/bin/python -m scripts.preflight --skip-ports --require-embeddings
+# Requires actual URL, key and all four aliases in the launching environment:
+./startup.sh --require-gateway --require-embeddings
 ```
 
-`--require-gateway` requires URL/key and analyst/strategist aliases, probes `/models`, and
-fails with available aliases when mappings do not match. This probe has not been run
-against a real configured gateway. It does not enable agents, grounding, or automatic pricing.
-The normal launcher explicitly uses the quantitative-preview path and reports the skipped probe.
+Gateway pre-flight checks `/models`. A successful model listing does not prove a model
+supports JSON Schema generation; a grounded run exercises that contract. No real chat
+gateway or remote Langfuse service has been verified in this development session.
 
-## Synthetic data and reproducibility
+## Knowledge and caching
 
-The seed CLI uses today's UTC date unless `--as-of` is supplied. Record the date and seed
-for repeatable fixtures. Normal startup never reseeds existing products.
+Local MiniLM ONNX inference uses a checksum-verified, explicitly prepared model in
+`data/models`. Inference/startup never downloads it implicitly. Chroma persists in
+`data/chroma`; active versions publish atomically only after successful indexing.
+Historical citations remain resolvable. Runtime UTF-8 `.txt`/`.md` uploads are bounded to
+2MB, with durable queued/indexing/ready/failed/interrupted jobs and collection statistics.
 
 ```sh
-.venv/bin/python -m commerce.seed --sku-count 500 --days 180 --seed 42 --as-of 2026-11-08 --data-dir data
+.venv/bin/python -m scripts.rag check
+.venv/bin/python -m scripts.rag ingest examples/pricing-policy.md --source-id demo-pricing-policy --collection pricing_policy --version demo-v1
+.venv/bin/python -m scripts.rag query "What margin and change rules apply?" --role analyst
+.venv/bin/python -m scripts.rag collections
 ```
 
-Use `--category Beverages` for a 500-SKU single-category benchmark. An existing catalog is
-rejected by the standalone generator; `--reset` explicitly replaces synthetic Commerce
-data and its history/receipts. Preserve any data you need before requesting a reset.
+Retrieval searches every populated `pricing_policy`, `market_intel`, `product_kb`, and
+`user_uploads` collection, with default per-collection breadth 1/2/3/4 for the four roles.
+GroundedLLM obtains current retrieval for every call and validates citations on generated
+and cached responses. The separate SQLite cache includes model/schema/prompt, numeric
+facts, policy, evidence, and corpus versions in eligibility. Semantic reuse is deliberately
+restricted to normalized equivalent prompts in the same verified context.
 
-Ground-truth elasticity is isolated in Commerce-owned evaluation storage and
-`data/evaluation_truth.json`. It is absent from all ordinary HTTP read payloads and model
-inputs. `data/competitor_feed.json` supplies the replaceable synthetic competitor adapter.
-The platform stores derived preview evidence and source timestamps, not a live catalog replica.
+Gateway embeddings require both explicit provider selection and
+`ALLOW_GATEWAY_EMBEDDINGS=true`; they are never an automatic fallback. Their live behavior
+is unverified. See the runbook for all RAG variables and safe version replacement.
 
-The initial numerical policy uses USD, decimal monetary strings, gross margin as
-`(price - cost) / price`, a 14-day default horizon, 1,000 default draws, 95% intervals,
-and at least 30 positive-sales observations with four distinct prices. Monte Carlo samples
-fitted elasticity uncertainty, competitor response, cost drift, and seasonality. Shared
-shocks retain sample alignment for run-level intervals. Inventory is capped with no replenishment.
-Model/engine configuration and all initial uncertainty assumptions appear in preview results.
-Stability damping and observed-outcome calibration are future work.
+## Decisions, outcomes, and operation
 
-## Validation
+Initial policy values are visible and configurable in Settings and `/api/policy`.
+The market-gap escalation limit is configurable in percent (initial trial value 30%);
+it complements retained price-history/category anomaly signals.
+They are development calibration choices, not approved or empirically proven thresholds.
+The full mode/band matrix, numeric assumptions, hold semantics, and learning caps are
+recorded in [decisions](docs/decisions.md).
+
+The global **Halt** has one confirmation: it fences pending dispatch, stops scheduling,
+and resets Supervised. An already-sent request cannot be recalled; durable batch keys and
+Commerce receipt lookup reconcile ambiguous outcomes. Never create a new key to retry an
+unknown result. Restart cancels stale automatic authorizations and never restarts loop timers.
+
+Feedback reads aggregate post-push Commerce sales over HTTP. Immature/incomplete windows
+stay pending. Intervening prices and overlapping observations are excluded. Learning is
+bounded, versioned residual calibration; poor evidence may widen uncertainty. The static
+seed does not invent future transactions after a price push, so new changes usually remain
+pending until suitable observations exist. Forecast comparisons are not causal realized uplift.
+
+The header monitor exposes tokens, estimated cost, and exact/semantic cache activity.
+Local JSONL telemetry is always attempted without prompt/body logging. Optional Langfuse
+receives metadata only; tracing failure does not fail pricing. The bounded A2A 0.3 subset
+advertises `message/send` and `tasks/get` at `/a2a`; local human review remains in the UI.
+**Ask the evidence** is read-only. The optional remote competitor adapter consumes JSON;
+no website scraper or production competitor integration is claimed.
+
+## Validation and remaining acceptance
 
 ```sh
 .venv/bin/python -m pytest -q
 cd web
+npm test
 npm run build
 cd ..
-# While ./startup.sh is running:
+# Against the running local services:
 .venv/bin/python -m scripts.smoke
+.venv/bin/python -m scripts.operations_smoke
+.venv/bin/python -m scripts.grounding_smoke
+.venv/bin/python -m scripts.acceptance_demo
 ```
 
-The automated suite covers all six Commerce compliance rules, coupled family rejection,
-partial batches, exact/conflicting/concurrent replay, stale versions, private evaluation
-data, elasticity recovery, shared-engine simulation, reproducibility, quality gates,
-HTTP-only separation, persistence, append-only audit, memory-only secrets, malformed upstream
-contracts, atomic settings replacement, and cancellation that retains numerical worker ownership.
-Architecture checks enforce a maximum of 400 lines per code file and prevent provider-model
-bypasses. These checks do not prove later unimplemented agent/approval paths correct.
+The suite includes service boundaries, deterministic numerics, compliance/mode decisions,
+idempotency and recovery, graph/loop behavior, grounding/structured-output/cache contracts,
+and redaction. UI checks render the real components and verify decision eligibility,
+disconnected controls, compliance veto, and simulation evidence. These checks supplement
+the strict TypeScript and production build; browser visual and interaction QA remains unverified
+because the browser service could not provide a screenshot or accessibility tree; the
+exact follow-up is recorded in [browser QA](docs/browser-qa.md). No Windows, live gateway, human effectiveness,
+or mature real-world feedback acceptance is inferred from mocked tests.
 
-The running smoke check exercises the Vite proxy, a full-catalog asynchronous preview,
-responsive health during calculation, exact scenario/preview parity, and unchanged catalog
-prices. Results are written to ignored `data/smoke_result.json`.
+Historical measurements: the 500-SKU quantitative preview with 1,000 draws completed in
+8.854 seconds with a 51.18ms concurrent health response; real-model runtime upload to
+retrieval completed in 2.489 seconds. These measurements cover the earlier local preview
+and ingestion paths, not the complete live grounded pipeline. Consult [task.md](task.md)
+and [validation notes](docs/validation.md) for current verification evidence and remaining release gates. Acceptance, escalation
+precision, interval coverage, real uplift, and convergence targets require adequate observed
+outcomes and human labels; no target is claimed solely from synthetic code coverage.
 
-Recorded on 2026-11-08 with Python 3.11.5 and Node 24.4.1: **58 backend tests passed**;
-TypeScript and the Vite production build passed; the live 500-SKU preview with 1,000 draws
-completed in **8.677 seconds**, with a concurrent health response in **51.39ms**. The
-scenario forecast matched exactly and catalog prices were unchanged. These timings cover
-the current quantitative-preview path, not the unimplemented grounded agent pipeline.
-Startup, restart with retained data, and clean supervisor shutdown were also exercised.
 
-Visual browser QA is unverified because the browser access host was unavailable. The UI
-entry point, proxy, backend workflows, TypeScript, and production bundle have been checked.
-An upstream FastAPI/Starlette TestClient deprecation warning currently appears for `httpx`;
-it does not fail the tests.
+Latest reproducible local benchmark (`data/benchmark_result.json`, 2026-11-10, Apple M1,
+8GiB RAM, eight logical CPUs): 500-SKU numeric analysis 3.879s, Monte Carlo compute 0.932s,
+one-SKU scenario 22.5ms, and cache p95 12.03ms with real MiniLM retrieval. The actual five-node
+500-SKU graph reached Supervised review in 15.129s with **an explicit typed model fixture**,
+500 cited recommendations and zero price writes; this excludes live model/human latency.
+The balanced fixture missed the >=5% revenue-uplift target against baseline (-7.05%) while
+improving forecast profit/margin; 466/500 high-confidence prices were within 10% of the
+held-out optimum, so the all-prices target also failed. These results are recorded honestly;
+T46 calibration and the external acceptance gates remain open.
 
-## Next implementation work
+The latest confidence model also evaluates uncertainty of the jointly selected price.
+This lowers eligibility when plausible simulated optima differ widely; it does not change
+the selected price, forecasts, baseline or rule thresholds. Scenario candidates explicitly
+carry no optimizer-selection verdict, and human edits clear the prior price's range.
 
-Continue with Chroma document ingestion, embedding availability checks, `GroundedLLM`, typed
-output/repair/citation enforcement, and the five-stage LangGraph state machine (T14–T19).
-Then connect independent platform validation, stability/autonomy, actual review interrupts,
-and the shared validated dispatcher before enabling any price-changing UI. The complete
-M1–M7 release and its product-effectiveness targets remain open.
+The evaluation-only [threshold study](docs/calibration.md) compares 72 configurations
+across two 500-SKU seeds. It preserves compliance, records coverage and accuracy limits,
+and makes no automatic policy changes. Run it with `.venv/bin/python -m scripts.calibrate`.
 
-Implementation reference: [FastAPI lifespan](https://fastapi.tiangolo.com/advanced/events/),
-[Pydantic settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/), and
-[Vite setup](https://vite.dev/guide/).
+Local HTTP smoke checks cover the running 500-SKU preview, run constraints, matching
+scenarios, monitor/audit, and real local grounding. Commerce prices and versions remain
+unchanged by these checks. The latest full-suite count is recorded in [task.md](task.md).
+
+
+Follow-up implementation on 2026-11-10 adds run-scoped maximum-change/category-bound
+controls to both run creation and continuous-loop setup, market-gap threshold settings,
+explicit **No change** outcomes, and observed-window forecast comparisons that preserve
+the mature feedback SKU scope. UI safety/serialization checks and the production build
+pass; final backend integration counts are recorded in the task/validation report. Live
+gateway access, browser verification, Windows execution, and business-effectiveness gates
+remain separate acceptance work.
