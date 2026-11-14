@@ -23,6 +23,7 @@ class WorkflowManager:
         self.tasks = set()
         self.active_runs = set()
         self.stopping = False
+        self.generation = 0
         self.graph = None
 
     async def open(self):
@@ -92,19 +93,32 @@ class WorkflowManager:
         if not run or run["request"].get("kind") != "grounded":
             raise ValueError("Grounded run not found")
         if self.stopping or self.preview.busy:
+            if not explicit:
+                return run
             raise RuntimeError("Another analysis is running. Resume after it finishes.")
         if not explicit and run_id not in self.active_runs:
             return run
-        snapshot = await self.graph.aget_state(self.config(run_id))
-        if not snapshot.next:
-            return run
-        if snapshot.interrupts and not self._resolved(snapshot.interrupts[0].value["item_id"]):
-            raise ValueError("Record a decision for the interrupted item before resuming this run.")
+        # Reserve before checkpoint I/O so another resume or preview cannot enter.
         self.preview.busy = True
-        self.active_runs.add(run_id)
-        command = Command(resume={"decision_recorded": True}) if snapshot.interrupts else None
-        self._schedule(run_id, command)
-        return self.store.get_run(run_id)
+        generation, scheduled = self.generation, False
+        try:
+            snapshot = await self.graph.aget_state(self.config(run_id))
+            if self.stopping or generation != self.generation:
+                if not explicit:
+                    return run
+                raise RuntimeError("Run resume was canceled. Explicitly retry after the halt or shutdown.")
+            if not snapshot.next:
+                return run
+            if snapshot.interrupts and not self._resolved(snapshot.interrupts[0].value["item_id"]):
+                raise ValueError("Record a decision for the interrupted item before resuming this run.")
+            self.active_runs.add(run_id)
+            command = Command(resume={"decision_recorded": True}) if snapshot.interrupts else None
+            self._schedule(run_id, command)
+            scheduled = True
+            return self.store.get_run(run_id)
+        finally:
+            if not scheduled:
+                self.preview.busy = False
 
     def _resolved(self, item_id):
         items = self.governance.queue()
@@ -158,6 +172,8 @@ class WorkflowManager:
             await self._checkpoint_context.__aexit__(None, None, None)
 
     async def cancel_active(self):
+        # Also fence resumes still awaiting checkpoint inspection, before task creation.
+        self.generation += 1
         for task in list(self.tasks):
             task.cancel()
         if self.tasks:

@@ -13,7 +13,7 @@ validated execution/revert, saved scenarios, feedback calibration, and an explic
 interval loop. These are local demonstration capabilities, not production authorization
 or evidence of measured business uplift.
 
-Latest verification: **451 backend tests**, **29 DOM interaction tests**, the UI build,
+Latest verification: **471 backend tests**, **67 DOM tests**, the UI build,
 and the isolated **56-case W1–W9 demonstration** pass. T06 startup checks and T38
 functional acceptance are complete. An isolated local gateway passes real alias and
 embedding pre-flight checks, but its generation probe fails; see
@@ -25,6 +25,15 @@ shows why the unchanged +5% revenue target cannot be met on the current fixtures
 See the [task plan](task.md), [requirements](requirement.md), [design](design.md),
 [implementation decisions](docs/decisions.md), and [operator runbook](docs/operator-runbook.md).
 The source [PRD](prd.md) is unchanged; its formal approval state remains unrecorded.
+
+The [modern dashboard redesign](docs/ui-redesign.md) adds a blue/mint visual system,
+collapsible navigation, Ctrl/Cmd+K workspace search, interactive overview stages,
+dashboard tabs, catalog grid/table views, product drawers, and explorable forecast
+intervals. Motion respects reduced-motion preferences; light/dark themes remain available.
+The November 14 reliability follow-up prevents stale query/scenario responses, keeps
+modal focus stable through updates, and repairs catalog refresh/pagination recovery.
+Further hardening fences checkpoint resumes during halt, isolates telemetry sinks,
+bounds gateway verification, and preserves policy drafts and upload status during requests.
 
 ## Run locally
 

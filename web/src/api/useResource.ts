@@ -12,7 +12,9 @@ export function useResource<T>(path: string) {
     setLoading(true);
     setError('');
     setData(undefined);
-    api<T>(path, { signal: controller.signal }).then(setData).catch(reason => {
+    api<T>(path, { signal: controller.signal }).then(value => {
+      if (!controller.signal.aborted) setData(value);
+    }).catch(reason => {
       if (!controller.signal.aborted) setError(errorMessage(reason));
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();

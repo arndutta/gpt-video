@@ -1,4 +1,26 @@
-# Development validation — 2026-11-12 (Asia/Kolkata)
+# Development validation — 2026-11-14 (Asia/Kolkata)
+
+The subsequent operational hardening passes **471 backend tests in 21.20s**, UI
+source/rendering checks, **67 DOM tests in 12.998s**, strict TypeScript/Vite production
+build (Vite 1.44s), and whitespace checks. Added coverage reproduces checkpoint-resume
+concurrency/halt races, independent usage persistence after JSONL failure, malformed
+usage metadata, a slow-stream gateway deadline, policy-draft locking and upload-read
+invalidation. The fresh isolated W1–W9 runner passes **56 cases in 8.217s** with stable
+source hashes; see [the demonstration record](acceptance-demo.md). No live model request
+or change to the running application's prices or existing `data/telemetry.jsonl`
+occurred during this follow-up. Existing browser,
+Windows and product-effectiveness limits remain open.
+
+Earlier verification on November 14:
+
+The November 14 UI reliability changes pass **457 backend tests in 23.61s**, UI
+source/rendering checks, **63 DOM tests in 11.980s**, strict TypeScript/Vite production
+build (Vite 1.33s), and four final architecture/boundary checks. Nine new DOM cases cover
+request races, polling scope/retry behavior, catalog recovery, unavailable forecast
+values, and modal focus updates. See [UI acceptance](ui-acceptance.md). The unchanged
+56-case acceptance demonstration was not rerun during this follow-up. One bounded CUA
+inventory again reports the browser host unavailable; no navigation or application
+action occurred. No live generation or business-effectiveness claim is added.
 
 This record separates implemented behavior from measured product effectiveness. The
 running application has no configured gateway or mock-model fallback. Model calls in
@@ -10,6 +32,14 @@ model generation and corporate-tier acceptance. Browser visual QA and Windows st
 were unavailable. The native
 Chrome follow-up also returned no screenshot or accessibility state; see the exact
 [browser verification limits](browser-qa.md).
+
+The November 12 follow-up adds an explicit helper-only `--batch-tokens` control.
+One real Phi-3 request with batch 64 and the unchanged 4096-token context still fails
+after 6.777s, with native `signal: killed` and HTTP400 at the same timestamp. The full
+input/schema and citation validation were retained; zero tokens/citations were returned.
+The kill's cause remains unconfirmed. Proxy cleanup completed, no model remained
+loaded, and no app settings or Commerce prices changed. Live generation and larger
+graph checks remain open; see the safe evidence in [local integration](local-gateway.md).
 
 ## Reproduce
 
@@ -31,9 +61,9 @@ The current selection-confidence report is the local ignored artifact
 local retrieval; the report clearly identifies retrieval fixtures if the model is missing.
 The full graph measurement is skipped when real local grounding is unavailable.
 
-Final November 12 integration verification passes **451 backend tests in 49.55s**,
-source/rendering checks, **29 DOM interaction tests**, and the strict TypeScript/Vite
-production build. The isolated W1–W9 demonstration passes **56 cases in 19.984s** with
+Final November 12 integration verification passes **457 backend tests in 40.55s**,
+source/rendering checks, **54 DOM tests**, and the strict TypeScript/Vite
+production build. The isolated W1–W9 demonstration passes **56 cases in 15.644s** with
 an unchanged source hash. These declarations retain the explicit fixture and browser
 limits in [UI acceptance](ui-acceptance.md) and [acceptance demo](acceptance-demo.md).
 The earlier live HTTP smoke

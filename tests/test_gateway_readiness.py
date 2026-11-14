@@ -54,6 +54,32 @@ async def test_transient_http_errors_do_not_echo_gateway_response_or_credentials
     assert SECRET not in str(caught.value)
 
 
+async def test_slow_stream_cannot_extend_the_total_verification_deadline(tmp_path, monkeypatch):
+    from platform_app import gateway
+
+    monkeypatch.setattr(gateway, "VERIFY_TIMEOUT_SECONDS", .03, raising=False)
+    monkeypatch.setattr(gateway, "tls_context", lambda _settings: True)
+
+    class SlowBody(httpx.AsyncByteStream):
+        closed, chunks = False, 0
+
+        async def __aiter__(self):
+            while True:
+                await asyncio.sleep(.005)
+                self.chunks += 1
+                yield b" "
+
+        async def aclose(self):
+            self.closed = True
+
+    body = SlowBody()
+    transport = httpx.MockTransport(lambda _: httpx.Response(200, stream=body))
+    with pytest.raises(GatewayError, match="Gateway model verification failed") as caught:
+        await asyncio.wait_for(verify_gateway(settings(tmp_path), transport), timeout=.5)
+    assert caught.value.code == "unavailable" and SECRET not in str(caught.value)
+    assert body.closed and body.chunks > 0
+
+
 async def test_unconfigured_check_never_opens_a_connection(tmp_path):
     def forbidden(_):
         raise AssertionError("An unconfigured gateway must not make a request")

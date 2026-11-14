@@ -29,7 +29,7 @@ try {
     export const renderLoop = state => renderToStaticMarkup(createElement(MemoryRouter, null, createElement(LoopDrawer, {state, connected:true, onClose(){}, onChanged(){}})));
     export const renderConstraints = value => renderToStaticMarkup(createElement(RunConstraints, {categories:['Beverages','Snacks'], value, onChange(){}}));
   `;
-  const bundle = await build({ stdin: { contents: entry, resolveDir: process.cwd(), loader: 'js' }, bundle: true, write: false, platform: 'node', format: 'cjs', jsx: 'automatic', logLevel: 'silent' });
+  const bundle = await build({ stdin: { contents: entry, resolveDir: process.cwd(), loader: 'js' }, bundle: true, write: false, platform: 'node', format: 'cjs', jsx: 'automatic', loader: { '.css': 'empty' }, logLevel: 'silent' });
   const filename = join(directory, 'checks.cjs');
   await writeFile(filename, bundle.outputFiles[0].contents);
   const require = createRequire(import.meta.url);

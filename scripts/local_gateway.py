@@ -18,6 +18,7 @@ from urllib.request import urlopen
 ROOT = Path(__file__).resolve().parents[1]
 ROLES = ("router", "narrator", "analyst", "strategist")
 ALIASES = {role: "local-" + role for role in ROLES}
+BATCH_SIZES = (16, 32, 64, 128, 256, 512)
 
 
 class LocalGatewayError(RuntimeError):
@@ -46,12 +47,12 @@ def _sigterm_cleanup():
         signal.signal(signal.SIGTERM, previous)
 
 
-def proxy_config(model, ollama_port):
+def proxy_config(model, ollama_port, *, batch_tokens=512):
     return {
         "model_list": [{"model_name": alias, "litellm_params": {
             "model": "ollama_chat/" + model,
             "api_base": f"http://127.0.0.1:{ollama_port}",
-            "num_ctx": 4096, "max_tokens": 800, "keep_alive": 0,
+            "num_ctx": 4096, "num_batch": batch_tokens, "max_tokens": 800, "keep_alive": 0,
             "timeout": 120,
         }, "model_info": {"input_cost_per_token": 0, "output_cost_per_token": 0}}
             for alias in ALIASES.values()],
@@ -89,12 +90,15 @@ def child_environment(key):
 
 
 class LocalGateway:
-    def __init__(self, model, *, port=4002, ollama_port=11434, proxy_python=None):
+    def __init__(self, model, *, port=4002, ollama_port=11434, proxy_python=None, batch_tokens=512):
         if not model or len(model) > 200 or any(c.isspace() for c in model):
             raise LocalGatewayError("Select one installed Ollama model identifier.")
         if not 1024 <= port <= 65535 or not 1 <= ollama_port <= 65535:
             raise LocalGatewayError("Invalid local port.")
+        if type(batch_tokens) is not int or batch_tokens not in BATCH_SIZES:
+            raise LocalGatewayError("Select a supported local prompt batch size.")
         self.model, self.port, self.ollama_port = model, port, ollama_port
+        self.batch_tokens = batch_tokens
         # Preserve the venv executable directory; resolving its symlink loses sibling CLI scripts.
         self.proxy_python = Path(proxy_python or ROOT / ".cache/local-gateway-env/bin/python").absolute()
         self._key, self._process = "sk-" + secrets.token_urlsafe(48), None
@@ -132,7 +136,7 @@ class LocalGateway:
         self._preflight()
         with tempfile.TemporaryDirectory(prefix="pricing-local-gateway-") as directory:
             path = Path(directory) / "config.json"
-            path.write_text(json.dumps(proxy_config(self.model, self.ollama_port)))
+            path.write_text(json.dumps(proxy_config(self.model, self.ollama_port, batch_tokens=self.batch_tokens)))
             command = [str(self.proxy_python.with_name("litellm")), "--config", str(path),
                        "--host", "127.0.0.1", "--port", str(self.port), "--num_workers", "1"]
             try:
@@ -197,6 +201,7 @@ async def cited_probe(gateway, directory):
             call = {"status": "failed", "error_code": "probe_deadline"}
         return {"gateway_aliases_verified": verified["verified"], "aliases": ALIASES,
                 "backend_model": gateway.model, "structured_cited_call": call,
+                "request_options": {"num_ctx": 4096, "num_batch": gateway.batch_tokens, "max_tokens": 800},
                 "model_seconds": round(time.monotonic() - started, 3), "usage": llm.snapshot(),
                 "actual_price_writes": 0, "local_integration_only": True,
                 "corporate_tiers_certified": False}
@@ -212,11 +217,13 @@ def main():
     parser.add_argument("--port", type=int, default=4002)
     parser.add_argument("--ollama-port", type=int, default=11434)
     parser.add_argument("--proxy-python", type=Path)
+    parser.add_argument("--batch-tokens", type=int, choices=BATCH_SIZES, default=512,
+                        help="Explicit per-request Ollama prompt batch size; context stays at 4096")
     parser.add_argument("--output", type=Path, help="Optional metadata-only result JSON")
     args = parser.parse_args()
     try:
         gateway = LocalGateway(args.model, port=args.port, ollama_port=args.ollama_port,
-                               proxy_python=args.proxy_python)
+                               proxy_python=args.proxy_python, batch_tokens=args.batch_tokens)
         with _sigterm_cleanup(), gateway.running(), tempfile.TemporaryDirectory(prefix="pricing-local-probe-") as directory:
             report = asyncio.run(cited_probe(gateway, Path(directory)))
         report["proxy_stopped"] = True

@@ -2,6 +2,7 @@
 
 import queue
 from collections import Counter
+from collections.abc import Mapping
 import sqlite3
 import threading
 import time
@@ -14,9 +15,12 @@ from .pricing import catalog, estimate_cost
 
 
 def usage(raw) -> tuple[int, int]:
-    info = getattr(raw, "usage_metadata", None) or {}
-    if not info:
-        info = (getattr(raw, "response_metadata", None) or {}).get("token_usage", {})
+    info = getattr(raw, "usage_metadata", None)
+    if not isinstance(info, Mapping) or not info:
+        response = getattr(raw, "response_metadata", None)
+        info = response.get("token_usage") if isinstance(response, Mapping) else None
+    if not isinstance(info, Mapping):
+        info = {}
 
     def count(*names):
         value = next((info[name] for name in names if name in info), 0)
@@ -103,9 +107,13 @@ class CallMonitor:
             self.cost_sources[priced["pricing_source"]] += 1
         try:
             self.telemetry.event("model_call", **{key: value for key, value in item.items() if key != "timestamp"})
+        except Exception:
+            self.available = False
+        try:
             self.queue.put_nowait(item)
         except Exception:
-            self.dropped += 1
+            with self.lock:
+                self.dropped += 1
 
     def _export(self, item):
         settings = self.settings_provider()

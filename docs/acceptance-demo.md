@@ -36,8 +36,17 @@ backend behavior under those declared fixtures; it does not establish real model
 reliability/latency, product effectiveness, human review metrics, native browser
 interaction, Windows execution, or production release readiness.
 
-The final isolated execution on 2026-11-12 (Asia/Kolkata) passed all nine workflows
-with 56 cases in 19.984s and subprocess exit code 0. The report confirms that the Python source hash
+The latest isolated execution on 2026-11-14 (Asia/Kolkata) passes all nine workflows
+with **56 cases in 8.217s**, exit code 0, and an unchanged source digest during execution.
+Artifacts are `data/acceptance_demo_20261114_result.*`; the report identifies all 139
+Python source files and every executed case. The same fixture and acceptance limits
+above apply. The full suite separately passes 471 backend tests and 67 DOM cases.
+
+Latest verified Python-source SHA-256:
+`27ea15c9fc66f66352f35d352d72041e4fffcd7feb7aef0c898e10ce06518494`.
+
+The earlier isolated execution on 2026-11-12 (Asia/Kolkata) passed all nine workflows
+with 56 cases in 15.644s and subprocess exit code 0. The report confirms that the Python source hash
 did not change during the run. Its JSON, JUnit XML, and pytest log are retained under
 `data/acceptance_demo_result.*`; the JSON includes the exact source hash and every
 asserted test case. Separately, 38 startup, gateway-readiness, acceptance-runner,
@@ -48,8 +57,8 @@ the previous optimizer's interval, while immutable earlier revisions retain it. 
 checks are not live pricing-run or model latency results. Regenerate this report
 after implementation changes instead of substituting these historical measurements.
 
-Verified Python-source SHA-256:
-`56dc51887cae7a6c199109194923a413e7b871e9dbebe4ad33bcea7e3c546efa`
+November 12 Python-source SHA-256:
+`2552baf068f09b6ef0cde8def9bc9e0db0152874b3aa847f745a51250d6afa98`
 (137 Python files across Commerce, platform, scripts, and tests).
 
 ## Mode-specific startup

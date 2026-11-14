@@ -5,6 +5,49 @@ jsdom and drives them with Testing Library user events. Every network request is
 by an isolated, explicit test fixture; the suite never connects to the running Commerce
 service, pushes a real price, or uses a runtime model fallback.
 
+## Policy and upload follow-up — 2026-11-14 (Asia/Kolkata)
+
+The subsequent suite passes **67 DOM tests in 12.998s**, source/rendering checks and
+strict TypeScript/Vite build. Four additional cases cover upload-history reads that
+overlap acceptance, collection reads that overlap publication, frozen policy drafts
+with failure/retry, and actual multipart document identity submission with visible
+indexing-failure evidence. They use explicit network fixtures, no live model calls
+or price changes. Browser-only acceptance remains open.
+
+## Reliability follow-up — 2026-11-14 (Asia/Kolkata)
+
+The final suite passes source/rendering checks and **63 DOM tests in 11.980s**, with
+zero failures, skips or cancellations. Strict TypeScript/Vite build and four final
+architecture checks also pass. Nine new regressions verify scenario operation locking,
+late canceled-response parsing, polling scope isolation and error-preserving retries,
+catalog summary/pagination recovery, missing margin forecast centers, and modal focus
+after content/callback updates. These remain fixture-based DOM checks with no real
+price writes. A bounded browser inventory returned the host-unavailable error again;
+actual viewport, painted-theme, browser focus and latency acceptance remain open.
+
+## Modern dashboard follow-up — 2026-11-12 (Asia/Kolkata)
+
+The redesign passes source-rendering/eligibility checks and all **54 DOM
+tests** (25.700s), including nine new cases for command navigation, modal focus/placement,
+collapsed navigation, catalog grid/sorting/filter/pagination, read-only product details,
+exact interval values and invalid ranges, keyboard dashboard tabs, and the interactive
+workflow explainer. The strict TypeScript/Vite build and four boundary checks pass.
+Six further cases cover keyboard workflow/stress selection, no implicit submission,
+loaded run-history filters, hidden review selections, editable evidence starters with
+retained submitted questions, and audit metadata/filter reset. Scenario and run tests
+exercise the new native radio controls while preserving their request assertions.
+The original authority, compliance, credential and acknowledgment cases remain covered.
+Six additional focus cases exercise native Tab stops and real Drawer wrapping. Four
+usability cases cover gateway draft/response races, service-check retry, and IME-safe
+command handling. The DOM suite includes both component interactions and focus-helper
+contracts; it is not a native browser or latency measurement.
+See [the redesign record](ui-redesign.md). Test duration is not browser action latency.
+
+An earlier inventory was blocked by automatic approval review's tool usage limit.
+After the retry time, a fresh permitted inventory returned no browser surfaces and
+"The browser access host is unavailable". No alternate browser-control path was used.
+T26/T32/T33's visual/viewport/latency gates remain open.
+
 ## Verification repeat — 2026-11-11
 
 The unchanged frontend passed `npm test` again: source-rendering/eligibility checks and

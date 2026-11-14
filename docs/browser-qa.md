@@ -2,6 +2,43 @@
 
 Date: 2026-11-10. Local application: `http://127.0.0.1:5173`.
 
+## Browser-host recheck — 2026-11-14 (Asia/Kolkata)
+
+One `cua.getState()` inventory with a 10,000ms timeout returned in 2.43s. Native apps
+were listed, the browser list was empty, and the error remained **"The browser access
+host is unavailable"**. No workbench screenshot, tab, or accessibility tree was returned.
+Its completion summary was recorded once. No native fallback or application action
+followed. The reliability changes pass 63 DOM cases and the production build; those
+results do not close the actual browser/viewport/latency gates.
+
+## Browser-host recheck — 2026-11-12, 20:17 Asia/Kolkata
+
+After the earlier usage-limit retry time had passed, a fresh `cua.getState()` inventory
+was allowed and returned in 7.20s (requested timeout 10,000ms). It listed native apps
+but no browser surfaces and reported **"The browser access host is unavailable"**.
+It supplied no screenshot, tab, or accessibility tree for the workbench. No native
+Chrome fallback was repeated, and no navigation or application action was performed.
+The completion summary was recorded once. The current blocker is browser-host access;
+the earlier quota failure is retained below as historical evidence.
+
+At 20:38 Asia/Kolkata, a bounded request for the browser context associated with
+`http://127.0.0.1:5173` also returned the host-unavailable error (2.26s). No browser
+context, tab, screenshot or accessibility tree was returned. Its completion summary
+was recorded once. No application action or alternate automation path followed.
+
+## Redesign attempt — 2026-11-12 (Asia/Kolkata)
+
+One `cua.getState()` inventory was requested with a 10,000ms timeout. It was not
+executed: automatic approval review could not complete because the account's tool
+usage limit was reached. This was a review-service limit rather than a finding that
+the action was unsafe. The completion summary was recorded; no alternative browser
+automation, native fallback, tab creation, or application action followed.
+
+The redesigned app passes 54 DOM cases, source-rendering checks, and the
+strict TypeScript/Vite build. Its local UI and new command component return HTTP 200,
+and platform/Commerce health remain `ok`. These checks do not establish actual rendered
+layout or painted-theme acceptance. See [ui-redesign.md](ui-redesign.md).
+
 ## Bounded retry — 2026-11-11
 
 One read-only `cua.getState()` inventory was attempted with an 8,000ms execution timeout.

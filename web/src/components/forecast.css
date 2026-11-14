@@ -1,0 +1,25 @@
+.interval-card.distribution-card { min-width:0; padding:18px; border:1px solid var(--line); border-radius:12px; background:linear-gradient(140deg,var(--surface),var(--surface-alt)); }
+.interval-card .distribution-heading { align-items:flex-start; font-size:11px; }
+.interval-card .distribution-heading>span { font-weight:600; color:var(--muted); }
+.interval-card .distribution-heading strong { font-size:19px; letter-spacing:-.5px; color:var(--text); font-variant-numeric:tabular-nums; }
+.interval-plot { width:100%; height:74px; overflow:visible; margin-top:7px; }
+.interval-guide { stroke:var(--line); stroke-dasharray:2 4; stroke-width:1; }
+.interval-fill { fill:var(--accent-soft); }
+.interval-line { stroke:var(--accent); stroke-width:2; stroke-linecap:round; stroke-dasharray:260; animation:interval-reveal .5s ease-out; }
+.interval-point>line { stroke:var(--accent); stroke-width:2; stroke-linecap:round; }
+.interval-point>circle:last-child { fill:var(--accent); stroke:var(--surface); stroke-width:2; }
+.interval-halo { fill:var(--accent); opacity:0; transition:opacity .18s; }
+.interval-point.active .interval-halo { opacity:.15; }
+.interval-point.active>circle:last-child { fill:var(--success); }
+.interval-controls { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; }
+.interval-controls button { min-width:0; border:1px solid transparent; border-radius:7px; background:transparent; padding:7px 4px; text-align:left; transition:border-color .18s,background .18s; }
+.interval-controls button:last-child { text-align:right; }
+.interval-controls button:nth-child(2) { text-align:center; }
+.interval-controls button[aria-pressed="true"] { border-color:color-mix(in srgb,var(--accent) 18%,var(--line)); background:var(--accent-soft); }
+.interval-controls span { display:block; color:var(--muted); font-size:8px; line-height:1.7; }
+.interval-controls strong { display:block; color:var(--text); font-size:10px; margin-top:3px; font-weight:650; overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
+.interval-caption { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; justify-content:space-between; margin-top:12px; padding-top:10px; border-top:1px solid var(--line); color:var(--muted); font-size:8px; line-height:1.7; }
+.interval-caption>span:last-child { color:var(--accent); }
+.interval-unavailable { padding:23px 0 8px; }
+@keyframes interval-reveal { from { stroke-dashoffset:260; } to { stroke-dashoffset:0; } }
+@media(prefers-reduced-motion:reduce) { .interval-halo,.interval-controls button { transition:none; } }

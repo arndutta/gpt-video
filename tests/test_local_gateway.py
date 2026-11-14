@@ -34,6 +34,35 @@ def test_configuration_contains_no_key_and_only_one_local_backend(tmp_path):
     assert config["general_settings"]["master_key"] == "os.environ/LOCAL_GATEWAY_MASTER_KEY"
 
 
+def test_explicit_smaller_batch_preserves_context_output_limit_and_local_routing(monkeypatch):
+    gateway = LocalGateway("installed:model", batch_tokens=64)
+    monkeypatch.setattr(gateway, "_preflight", lambda: None)
+    observed = {}
+    class Process:
+        def poll(self):
+            return 0
+    def start(command, **_options):
+        path = Path(command[command.index("--config") + 1])
+        observed.update(json.loads(path.read_text()))
+        return Process()
+    monkeypatch.setattr(subprocess, "Popen", start)
+    with gateway.running():
+        pass
+    for row in observed["model_list"]:
+        params = row["litellm_params"]
+        assert params["num_batch"] == 64
+        assert params["num_ctx"] == 4096 and params["max_tokens"] == 800
+        assert params["model"] == "ollama_chat/installed:model"
+        assert params["api_base"] == "http://127.0.0.1:11434"
+    assert proxy_config("installed:model", 11434)["model_list"][0]["litellm_params"]["num_batch"] == 512
+
+
+@pytest.mark.parametrize("batch_tokens", [0, 513, 64.0, "64", True])
+def test_invalid_prompt_batch_size_fails_before_start(batch_tokens):
+    with pytest.raises(LocalGatewayError, match="batch"):
+        LocalGateway("installed:model", batch_tokens=batch_tokens)
+
+
 def test_venv_path_keeps_sibling_cli_when_python_is_symlink(tmp_path):
     python = tmp_path / "bin/python"
     python.parent.mkdir()

@@ -10,6 +10,7 @@ import { RunReport } from './RunReport';
 import { RunProgress } from './RunProgress';
 import { emptyRunConstraints, serializeRunConstraints } from '../api/runConstraints';
 import { RunConstraints } from '../components/RunConstraints';
+import { WorkflowChoice } from '../components/WorkflowChoices';
 
 const terminalStates = new Set(['completed', 'failed', 'interrupted', 'cancelled']);
 
@@ -28,6 +29,8 @@ export function RunsPage() {
   const [horizon, setHorizon] = useState(14);
   const [seed, setSeed] = useState(42);
   const [kind, setKind] = useState('quantitative_preview');
+  const [historyFilter, setHistoryFilter] = useState('all');
+  const filteredHistory = (history.data?.items || []).filter(item => historyFilter === 'all' || (historyFilter === 'review' ? ['waiting_review', 'awaiting_review'].includes(item.status) : historyFilter === 'stopped' ? ['failed', 'interrupted', 'cancelled'].includes(item.status) : item.status === historyFilter));
   const [constraints, setConstraints] = useState(emptyRunConstraints);
   const constraintCategories = category ? [category] : catalog.data?.categories.map(item => item.name) || [];
   const [detailVersion, setDetailVersion] = useState(0);
@@ -78,16 +81,17 @@ export function RunsPage() {
   return <>
     <PageHeading eyebrow="ANALYSIS AND DECISIONS" title="Pricing runs">Run a quantitative preview or a grounded pricing workflow with review and audited execution.</PageHeading>
     <section className="panel run-form-panel"><div className="panel-heading"><div><h2>Create a pricing run</h2><p>Fixed inputs and a seed make numerical results reproducible.</p></div><span className="neutral-tag">{kind === 'grounded' ? 'Mode-based approval policy' : 'Read-only preview'}</span></div><form className="run-form" onSubmit={submit}>
-      <label>Workflow<select value={kind} onChange={event => setKind(event.target.value)}><option value="quantitative_preview">Quantitative preview</option><option value="grounded">Grounded pricing workflow</option></select></label>
+      <WorkflowChoice value={kind} onChange={setKind} disabled={submitting} />
       <label>Scope<select value={category} onChange={event => setCategory(event.target.value)}><option value="">Full catalog</option>{catalog.data?.categories?.map(item => <option key={item.name} value={item.name}>{item.name}</option>)}</select></label>
       <label>Objective<select value={objective} onChange={event => setObjective(event.target.value)}><option value="balanced">Balanced</option><option value="revenue">Revenue-weighted</option><option value="margin">Margin-weighted</option></select></label>
       <label>Horizon (days)<input type="number" min="1" max="90" required value={horizon} onChange={event => setHorizon(Number(event.target.value))} /></label>
       <label>Simulation draws<input type="number" min="100" max="5000" step="100" required value={iterations} onChange={event => setIterations(Number(event.target.value))} /></label>
       <label>Random seed<input type="number" min="0" max="2147483647" required value={seed} onChange={event => setSeed(Number(event.target.value))} /></label>
+      <div className="run-configuration-summary"><strong>{kind === 'grounded' ? 'Grounded workflow' : 'Read-only preview'}</strong><span>{category || 'Full catalog'}</span><span>{horizon} days</span><span>{iterations.toLocaleString()} simulation draws</span><span>Seed {seed}</span></div>
       <RunConstraints categories={constraintCategories} value={constraints} onChange={setConstraints} disabled={submitting} />
       <button className="button primary" type="submit" disabled={submitting}><Play size={16} />{submitting ? 'Starting…' : 'Start run'}</button>
     </form>{submitError && <div className="form-error"><ErrorNotice message={submitError} /></div>}</section>
-    <div className="runs-layout"><section className="panel run-history"><div className="panel-heading"><h2>Run history</h2><button className="icon-button" onClick={history.reload} aria-label="Refresh run history"><RefreshCw size={16} /></button></div>{history.error && <div className="panel-body"><ErrorNotice message={history.error} /></div>}{history.data?.items?.length ? <div className="history-items">{history.data.items.map(item => <button key={item.id} className={`history-item ${runId === item.id ? 'selected' : ''}`} onClick={() => setParams({ id: item.id })}><div><strong>Run {item.id.slice(0, 8)}</strong><ChevronRight size={15} /></div><small>{timestamp(item.created_at)}</small><Status status={item.status} /></button>)}</div> : <div className="history-empty small muted">{history.loading ? 'Loading history…' : 'No runs yet.'}</div>}</section>
+    <div className="runs-layout"><section className="panel run-history"><div className="panel-heading"><h2>Run history</h2><button className="icon-button" onClick={history.reload} aria-label="Refresh run history"><RefreshCw size={16} /></button></div><label className="run-history-filter">Filter run history<select aria-label="Filter run history" value={historyFilter} onChange={event => setHistoryFilter(event.target.value)}><option value="all">All runs</option><option value="review">Awaiting review</option><option value="completed">Completed</option><option value="stopped">Failed or stopped</option></select><small>{filteredHistory.length} of {history.data?.items?.length ?? 0} loaded runs</small></label>{history.error && <div className="panel-body"><ErrorNotice message={history.error} /></div>}{filteredHistory.length ? <div className="history-items">{filteredHistory.map(item => <button key={item.id} className={`history-item ${runId === item.id ? 'selected' : ''}`} aria-pressed={runId === item.id} onClick={() => setParams({ id: item.id })}><div><strong>Run {item.id.slice(0, 8)}</strong><ChevronRight size={15} /></div><small>{timestamp(item.created_at)}</small><Status status={item.status} /></button>)}</div> : <div className="history-empty small muted">{history.loading ? 'Loading history…' : historyFilter !== 'all' ? 'No matching runs.' : 'No runs yet.'}</div>}</section>
       <section className="panel run-result">{runId ? <><div className="panel-heading"><div><h2>Run {runId.slice(0, 8)}</h2><p>{run ? timestamp(run.created_at) : 'Loading run details'}</p></div>{run && <Status status={run.status} />}</div>{loadError && <div className="panel-body"><ErrorNotice message={loadError} /></div>}{!run && !loadError && <Loading label="Loading pricing run…" />}{run && <RunProgress run={run} onChanged={refreshRun} />}{run && !terminalStates.has(run.status) && !['waiting_review', 'awaiting_review'].includes(run.status) && <div className="run-progress"><Loading label={run.stage ? run.stage.replaceAll('_', ' ') : 'Running pricing analysis…'} /><p className="small muted">Progress reconnects automatically while this page is open.</p></div>}{run?.error && <div className="panel-body"><ErrorNotice message={errorMessage(run.error)} /></div>}{run?.result && <RunReport key={runId} result={run.result} />}{run && ['waiting_review', 'awaiting_review'].includes(run.status) && <div className="panel-body"><Link className="button primary" to="/review">Review pending recommendations</Link></div>}</> : <EmptyState icon={<BarChart3 size={34} />} title="Your results will appear here"><p>Create a pricing run or select a run from history to inspect its evidence.</p></EmptyState>}</section>
     </div>
   </>;

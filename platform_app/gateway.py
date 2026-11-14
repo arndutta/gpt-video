@@ -11,6 +11,7 @@ from platform_app.config import tls_context
 from platform_app.llm.safety import redact
 
 ROLES = ("router", "narrator", "analyst", "strategist")
+VERIFY_TIMEOUT_SECONDS = 10
 
 
 class GatewayError(RuntimeError):
@@ -32,8 +33,10 @@ async def verify_gateway(settings, transport=None):
     if not settings.gateway_base_url or not settings.api_key or missing_roles:
         raise GatewayError("unconfigured", "Configure the gateway URL, API key and all four model aliases before verification.")
     try:
-        async with httpx.AsyncClient(verify=tls_context(settings), timeout=10, transport=transport,
-                                     follow_redirects=False) as client:
+        # HTTPX bounds individual operations; a slow stream also needs a total deadline.
+        async with asyncio.timeout(VERIFY_TIMEOUT_SECONDS), httpx.AsyncClient(
+                verify=tls_context(settings), timeout=VERIFY_TIMEOUT_SECONDS, transport=transport,
+                follow_redirects=False) as client:
             async with client.stream("GET", settings.gateway_base_url + "/models", headers={
                     "Authorization": "Bearer " + settings.api_key.get_secret_value()}) as response:
                 response.raise_for_status()
@@ -53,7 +56,7 @@ async def verify_gateway(settings, transport=None):
             if not isinstance(model, str) or not 1 <= len(model) <= 200:
                 raise ValueError("Invalid model identifier")
             available.add(model)
-    except (httpx.HTTPError, ValueError, OSError):
+    except (httpx.HTTPError, ValueError, OSError, TimeoutError):
         raise GatewayError("unavailable", "Gateway model verification failed. Check access, credentials, model-list support and corporate CA settings.") from None
     missing = sorted({getattr(settings, "model_" + role) for role in ROLES} - available)
     if missing:

@@ -1,13 +1,26 @@
+import { useState } from 'react';
 import type { Distribution, Forecast, Recommendation } from '../api/types';
 import { money, number } from '../api/client';
 import { EvidenceSources } from './EvidenceSources';
+import './forecast.css';
 
 export function DistributionBand({ label, distribution, format = money }: { label: string; distribution?: Distribution; format?: (value: unknown) => string }) {
+  const [selected, setSelected] = useState<'lower' | 'median' | 'upper'>('median');
   if (!distribution) return null;
   const lower = distribution.lower, upper = distribution.upper, median = distribution.median ?? distribution.mean;
-  const valid = lower != null && upper != null && median != null && Number.isFinite(lower + upper + median);
-  const position = valid && upper > lower ? Math.min(100, Math.max(0, (median - lower) / (upper - lower) * 100)) : 50;
-  return <div className="distribution-card"><div className="distribution-heading"><span>{label}</span><strong>{format(median)}</strong></div>{valid ? <><div className="distribution-track" role="img" aria-label={`${label}: median ${format(median)}, 95 percent interval ${format(lower)} to ${format(upper)}`}><div className="distribution-range" /><span className="distribution-marker" style={{ left: `${position}%` }} /></div><div className="distribution-labels"><span>{format(lower)}</span><span>95% interval</span><span>{format(upper)}</span></div></> : <p className="small muted">Interval unavailable</p>}</div>;
+  const valid = lower != null && upper != null && median != null && Number.isFinite(lower + upper + median) && lower <= upper && (distribution.median == null || (median >= lower && median <= upper));
+  const domainLow = valid ? Math.min(lower, median) : 0;
+  const domainHigh = valid ? Math.max(upper, median) : 0;
+  const pointX = (value?: number) => value != null && domainHigh > domainLow ? 20 + (value - domainLow) / (domainHigh - domainLow) * 260 : 150;
+  const central = distribution.median != null ? 'Median' : 'Mean';
+  const points = [{ key: 'lower' as const, title: 'Lower bound', value: lower, x: pointX(lower) }, { key: 'median' as const, title: central, value: median, x: pointX(median) }, { key: 'upper' as const, title: 'Upper bound', value: upper, x: pointX(upper) }];
+  const current = points.find(point => point.key === selected)!;
+  const display = (value: unknown) => value == null || !Number.isFinite(Number(value)) ? '—' : format(value);
+  return <div className="distribution-card interval-card"><div className="distribution-heading"><span>{label}</span><strong>{display(median)}</strong></div>{valid ? <>
+    <svg className="interval-plot" viewBox="0 0 300 74" role="img" aria-label={`${label}: ${central.toLowerCase()} ${display(median)}, 95 percent interval ${display(lower)} to ${display(upper)}`}><line className="interval-guide" x1="20" y1="18" x2="20" y2="62" /><line className="interval-guide" x1="150" y1="18" x2="150" y2="62" /><line className="interval-guide" x1="280" y1="18" x2="280" y2="62" /><rect className="interval-fill" x={pointX(lower)} y="33" width={pointX(upper) - pointX(lower)} height="16" rx="8" /><line className="interval-line" x1={pointX(lower)} y1="41" x2={pointX(upper)} y2="41" />{points.map(point => <g key={point.key} className={`interval-point ${selected === point.key ? 'active' : ''}`}><circle className="interval-halo" cx={point.x} cy="41" r="10" /><line x1={point.x} y1={point.key === 'median' ? 26 : 34} x2={point.x} y2={point.key === 'median' ? 56 : 48} /><circle cx={point.x} cy="41" r={point.key === 'median' ? 5 : 3.5} /></g>)}</svg>
+    <div className="interval-controls" role="group" aria-label={`${label} interval values`}>{points.map(point => <button key={point.key} aria-label={`${label} ${point.title.toLowerCase()}`} aria-pressed={selected === point.key} onClick={() => setSelected(point.key)} onFocus={() => setSelected(point.key)} onMouseEnter={() => setSelected(point.key)}><span>{point.title}</span><strong>{display(point.value)}</strong></button>)}</div>
+    <div className="interval-caption"><span>95% simulation interval</span><span aria-live="polite">{current.title}: {display(current.value)}</span></div>
+  </> : <p className="small muted interval-unavailable">Interval unavailable</p>}</div>;
 }
 
 export function ForecastBands({ forecast, currency = 'USD' }: { forecast?: Forecast; currency?: string }) {

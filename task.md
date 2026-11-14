@@ -26,7 +26,7 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
   summaries expose the separate count. Realized comparisons now retain the mature
   observed SKU denominator rather than comparing partial observations with all-run forecasts.
 - UI serialization/safety/rendering checks and the TypeScript/Vite production build pass.
-  The latest full backend suite passes 451 tests. This follow-up does not claim unavailable
+  The latest full backend suite passes 457 tests. This follow-up does not claim unavailable
   live gateway or business-effectiveness targets; remaining gates stay unchecked.
 
 ### Current development status — 2026-11-12 (Asia/Kolkata)
@@ -51,8 +51,13 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
   startup pre-flight passes against an isolated local LiteLLM proxy and real embeddings.
   Its generation probe fails; the running workbench still has no gateway/key/aliases.
   Runtime model generation has no fabricated fallback. See [local integration](docs/local-gateway.md).
-- The integrated suite passes 451 backend tests (49.55s). Source/rendering checks,
-  29 actual-component DOM interaction tests, and the strict TypeScript/production build
+- A later real probe with the new explicit helper batch-64 option preserves the entire
+  input/schema, 4096-token context and normal citation validation. It still fails after
+  6.777s with the runner killed and no generated tokens. The kill's cause is unconfirmed;
+  the proxy was cleaned up and the running app remains unconfigured. No further blind
+  generation retries or larger graph run followed. Live-generation acceptance stays open.
+- The integrated suite passes 457 backend tests (40.55s). Source/rendering checks,
+  54 frontend DOM tests, and the strict TypeScript/production build
   pass. The current benchmark artifact is `data/benchmark_selection_result.json`;
   [validation notes](docs/validation.md) distinguish real
   local compute/retrieval from an explicitly injected model fixture. Full live-gateway
@@ -88,6 +93,63 @@ criteria are met; implemented subsets are tracked below and in [README.md](READM
   action or populated fixture was performed.
 - Build authorization comes from the user's explicit development/completion instructions.
   The original PRD remains unchanged and no formal approval status is inferred.
+
+### UI redesign — 2026-11-12 (Asia/Kolkata)
+
+The user's selected modern blue/mint dashboard is implemented across the local workspace:
+new navigation/header, command search, overview/workflow explorer, dashboard tabs,
+catalog grid/table and product inspection, interactive forecast intervals, shared
+light/dark surfaces, and reduced-motion-aware animation. Follow-up adds native workflow/
+stress cards, loaded run-history filters, review-band shortcuts and hidden-selection
+warnings, recorded audit metadata, and editable evidence-question starters.
+Follow-up polish adds accurate settings-draft feedback, disabled in-flight settings,
+explicit service retry, loading placeholders, IME handling and native modal Tab stops.
+All 54 DOM cases
+and the TypeScript/Vite build pass; four architecture/boundary checks also pass.
+See [redesign details and verification limits](docs/ui-redesign.md). After the earlier
+tool usage limit, a permitted inventory still reports the browser access host unavailable. Actual
+viewport, painted contrast, and browser latency remain unverified; T26/T32/T33 and the
+live-model/effectiveness/release gates remain open. No backend or pricing policy changed.
+
+### UI reliability follow-up — 2026-11-14 (Asia/Kolkata)
+
+- Pending scenario simulation/save operations now disable competing requests, saved-result
+  loading, and input editing so earlier responses cannot overwrite a different scenario.
+- Canceled resource responses cannot replace a newer query after JSON parsing finishes.
+  Polling hides data from a previous URL/filter scope immediately; same-scope refreshes
+  retain the last response and keep connection errors visible until successful recovery.
+- Catalog refresh reloads summary counts/categories, reports summary failures, and moves
+  to the last valid page when refreshed product totals shrink. Missing forecast centers
+  remain explicitly unavailable, including percentage-formatted margin forecasts.
+- Drawers recapture Tab after a focused control disappears. New close callbacks no longer
+  reset focus during editing, and Escape uses the latest callback.
+- Verification passes: **457 backend tests** (23.61s), **63 DOM tests** (11.980s), UI
+  source/rendering checks, strict TypeScript/Vite production build, and four final
+  architecture/boundary checks. Nine new regression cases cover these failures.
+- One bounded browser inventory still returns no browsers and reports the access host
+  unavailable. No browser action occurred. T26/T32/T33 visual/latency acceptance and
+  existing live-generation/effectiveness/release gates remain open.
+
+### Operational hardening continuation — 2026-11-14 (Asia/Kolkata)
+
+- Grounded checkpoint resume reserves the shared analysis slot before checkpoint I/O,
+  releases it on failed/canceled/no-op inspection, and cannot launch delayed graph work
+  after halt or shutdown. Automatic decision notifications defer while analysis is busy.
+- A failed JSONL emission no longer suppresses independent SQLite model usage history
+  or exporter submission. Malformed token metadata is ignored without failing an otherwise
+  valid cited answer or leaving an active-call count stuck.
+- Gateway model-list verification now has a total 10-second deadline in addition to
+  HTTP operation timeouts; slow streaming cannot prolong readiness indefinitely.
+- Policy inputs remain disabled during an update, retaining the submitted draft after
+  failure. Document upload history/statistics discard responses begun before a relevant
+  accepted upload or publication, then fetch current state after the old read settles.
+- Final verification passes **471 backend tests in 21.20s**, **67 DOM tests in 12.998s**,
+  source/rendering checks, strict TypeScript/Vite production build (Vite 1.44s), and
+  whitespace checks. Fourteen backend and four UI regression cases were added.
+- A fresh isolated W1–W9 demonstration passes **56 cases in 8.217s**, with an unchanged
+  139-file Python source digest. Evidence is `data/acceptance_demo_20261114_result.*`.
+  Model/embedding and mature-sales-clock fixtures remain explicit. Browser, native Windows,
+  live-generation, effectiveness and final release acceptance remain open.
 
 ## How to use this plan
 

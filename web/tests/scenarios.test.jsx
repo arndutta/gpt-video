@@ -18,7 +18,7 @@ test('scenario controls submit stress/horizon and show pending state, bands, ris
   assert.equal(screen.getByLabelText('Candidate price').value, '10.00');
   await user.clear(screen.getByLabelText('Candidate price')); await user.type(screen.getByLabelText('Candidate price'), '10.50');
   await user.clear(screen.getByLabelText('Horizon (days)')); await user.type(screen.getByLabelText('Horizon (days)'), '7');
-  await user.selectOptions(screen.getByLabelText('Stress preset'), 'cost_spike');
+  await user.click(screen.getByRole('radio', { name: 'Cost spike' }));
   await user.click(screen.getByRole('checkbox', { name: 'Add grounded interpretation' }));
   await user.click(screen.getByRole('button', { name: 'Simulate scenario' }));
   await screen.findByText('Sampling possible outcomes with shared assumptions…');
@@ -79,7 +79,7 @@ test('saving reevaluates the retained request and loading restores saved inputs/
   const api = installApi(); const user = userEvent.setup(); render(<ScenarioPage />);
   await screen.findByRole('option', { name: 'Tea pack · BEV-1' });
   await user.selectOptions(screen.getByLabelText('Product'), 'BEV-1');
-  await user.selectOptions(screen.getByLabelText('Stress preset'), 'demand_collapse');
+  await user.click(screen.getByRole('radio', { name: 'Demand collapse' }));
   await user.click(screen.getByRole('button', { name: 'Simulate scenario' }));
   const save = await screen.findByRole('button', { name: 'Reevaluate & save' }); assert.equal(save.disabled, true);
   await user.type(screen.getByLabelText('Scenario name'), 'Stock review');
@@ -87,10 +87,51 @@ test('saving reevaluates the retained request and loading restores saved inputs/
   assert.deepEqual(api.sent('/api/scenarios/saved')[0].body.request, api.sent('/api/scenarios/batch')[0].body);
   assert.ok(screen.getByText('$11.00'));
   const saved = await screen.findByRole('button', { name: /Stock review/ });
-  await user.selectOptions(screen.getByLabelText('Stress preset'), 'none');
+  await user.click(screen.getByRole('radio', { name: 'Normal assumptions' }));
   await user.click(saved);
-  assert.equal(screen.getByLabelText('Stress preset').value, 'demand_collapse');
+  assert.equal(screen.getByRole('radio', { name: 'Demand collapse' }).checked, true);
   assert.equal(api.calls.some(call => /recommendations.*decision|prices/.test(call.path)), false);
+});
+
+test('pending scenario operations prevent loading or editing another request until the response settles', async () => {
+  const request = { items: [{ sku: 'SNACK-1', candidate_price: '12.00' }], horizon_days: 7, iterations: 1000, seed: 42, stress: 'cost_spike', narrate: false };
+  const saved = { id: 'saved-other', name: 'Other scenario', created_at: '2026-11-10T00:00:00Z', request,
+    result: { items: [recommendation('other-result', { sku: 'SNACK-1', proposed_price: '12.00' })] } };
+  const api = installApi({ saved: [saved] }); const simulation = deferred(); const saving = deferred();
+  api.on('POST', '/api/scenarios/batch', async ({ body }) => { await simulation.promise; return reply({ items: [recommendation('BEV-1')], configuration: body }); });
+  api.on('POST', '/api/scenarios/saved', async ({ body }) => { await saving.promise; return reply({ ...saved, name: body.name, request: body.request }); });
+  const user = userEvent.setup(); render(<ScenarioPage />);
+  await screen.findByRole('option', { name: 'Tea pack · BEV-1' });
+  await user.selectOptions(screen.getByLabelText('Product'), 'BEV-1');
+  await user.click(screen.getByRole('button', { name: 'Simulate scenario' }));
+  const other = screen.getByRole('button', { name: /Other scenario/ });
+  assert.equal(other.disabled, true);
+  assert.equal(screen.getByLabelText('Product').disabled, true);
+  assert.equal(screen.getByLabelText('Candidate price').disabled, true);
+  assert.equal(screen.getByLabelText('Horizon (days)').disabled, true);
+  assert.equal(screen.getByRole('button', { name: 'Add another SKU' }).disabled, true);
+  assert.equal(screen.getByRole('checkbox', { name: 'Add grounded interpretation' }).disabled, true);
+  await user.click(other);
+  assert.equal(screen.getByLabelText('Product').value, 'BEV-1');
+  simulation.resolve();
+  await screen.findByRole('button', { name: 'Reevaluate & save' });
+  await user.type(screen.getByLabelText('Scenario name'), 'Current scenario');
+  await user.click(screen.getByRole('button', { name: 'Reevaluate & save' }));
+  assert.equal(screen.getByRole('button', { name: 'Simulate scenario' }).disabled, true);
+  assert.equal(other.disabled, true);
+  assert.equal(screen.getByLabelText('Scenario name').disabled, true);
+  assert.equal(screen.getByRole('radio', { name: 'Cost spike' }).matches(':disabled'), true);
+  await user.click(other);
+  await user.click(screen.getByRole('button', { name: 'Simulate scenario' }));
+  assert.equal(api.sent('/api/scenarios/batch').length, 1);
+  assert.deepEqual(api.sent('/api/scenarios/saved')[0].body.request, api.sent('/api/scenarios/batch')[0].body);
+  saving.resolve();
+  await screen.findByText(/Scenario reevaluated against current Commerce data/);
+  assert.equal(screen.getByLabelText('Product').disabled, false);
+  assert.equal(other.disabled, false);
+  await user.click(other);
+  assert.equal(screen.getByLabelText('Product').value, 'SNACK-1');
+  assert.equal(screen.getByRole('radio', { name: 'Cost spike' }).checked, true);
 });
 
 test('missing intervals and unavailable optional narration have explicit DOM states in either theme', async () => {
@@ -110,7 +151,7 @@ test('run form sends advanced scope constraints and shows validation errors befo
   const api = installApi(); const user = userEvent.setup(); render(<MemoryRouter><RunsPage /></MemoryRouter>);
   await screen.findByRole('option', { name: 'Beverages' });
   await user.selectOptions(screen.getByLabelText('Scope'), 'Beverages');
-  await user.selectOptions(screen.getByLabelText('Workflow'), 'grounded');
+  await user.click(screen.getByRole('radio', { name: 'Grounded pricing workflow' }));
   await user.click(screen.getByText(/Advanced price constraints/));
   await user.type(screen.getByLabelText('Maximum price change (%)'), '5');
   await user.type(screen.getByLabelText('Price floor'), '12');

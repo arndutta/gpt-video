@@ -1,13 +1,15 @@
 import { AlertCircle, ArrowRight, LoaderCircle, X } from 'lucide-react';
-import { useEffect, useRef } from 'react';
-import type { ReactNode } from 'react';
+import { useEffect, useId, useRef } from 'react';
+import type { ReactNode, RefObject } from 'react';
+import { createPortal } from 'react-dom';
+import { focusableElements } from './focus';
 
 export function ErrorNotice({ message }: { message: string }) {
   return <div className="notice error" role="alert"><AlertCircle size={18} /><span>{message}</span></div>;
 }
 
 export function Loading({ label = 'Loading workspace…' }: { label?: string }) {
-  return <div className="loading" role="status"><LoaderCircle className="spin" size={20} />{label}</div>;
+  return <div className="loading" role="status"><span className="loading-label"><LoaderCircle className="spin" size={20} />{label}</span><span className="loading-skeleton" aria-hidden="true"><i /><i /><i /></span></div>;
 }
 
 export function EmptyState({ icon, title, children }: { icon?: ReactNode; title: string; children: ReactNode }) {
@@ -24,26 +26,34 @@ export function Status({ status }: { status: string }) {
   return <span className={`status ${good ? 'success' : bad ? 'danger' : 'neutral'}`}><span className="status-dot" />{status === 'unchanged' ? 'No change' : status.replaceAll('_', ' ')}</span>;
 }
 
-export function Drawer({ title, subtitle, onClose, children }: { title: string; subtitle?: string; onClose: () => void; children: ReactNode }) {
+export function Drawer({ title, subtitle, onClose, children, className = '', initialFocusRef }: { title: string; subtitle?: string; onClose: () => void; children: ReactNode; className?: string; initialFocusRef?: RefObject<HTMLElement | null> }) {
   const panel = useRef<HTMLDivElement>(null);
+  const close = useRef(onClose);
+  const initialFocus = useRef(initialFocusRef);
+  const titleId = useId();
+  useEffect(() => { close.current = onClose; }, [onClose]);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     const oldOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    panel.current?.focus();
+    (initialFocus.current?.current || panel.current)?.focus();
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.isComposing || event.defaultPrevented) return;
+      if (event.key === 'Escape') close.current();
       if (event.key !== 'Tab') return;
-      const elements = panel.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea, [tabindex="0"]');
-      if (!elements?.length) return;
+      const elements = panel.current ? focusableElements(panel.current) : [];
+      if (!elements.length) { event.preventDefault(); panel.current?.focus(); return; }
       const first = elements[0], last = elements[elements.length - 1];
-      if (event.shiftKey && (document.activeElement === first || document.activeElement === panel.current)) { event.preventDefault(); last.focus(); }
-      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      const active = document.activeElement;
+      const outside = !panel.current?.contains(active);
+      if (event.shiftKey && (active === first || active === panel.current || outside)) { event.preventDefault(); last.focus(); }
+      if (!event.shiftKey && (active === last || active === panel.current || outside)) { event.preventDefault(); first.focus(); }
     };
     document.addEventListener('keydown', onKey);
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = oldOverflow; previous?.focus(); };
-  }, [onClose]);
-  return <div className="drawer-backdrop" onClick={onClose}><div ref={panel} className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" tabIndex={-1} onClick={event => event.stopPropagation()}><div className="drawer-heading"><div><h2 id="drawer-title">{title}</h2>{subtitle && <p>{subtitle}</p>}</div><button className="icon-button" aria-label="Close panel" onClick={onClose}><X size={20} /></button></div>{children}</div></div>;
+  }, []);
+  const content = <div className={`drawer-backdrop ${className}`} onClick={onClose}><div ref={panel} className="drawer" role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} onClick={event => event.stopPropagation()}><div className="drawer-heading"><div><h2 id={titleId}>{title}</h2>{subtitle && <p>{subtitle}</p>}</div><button className="icon-button" aria-label="Close panel" onClick={onClose}><X size={20} /></button></div>{children}</div></div>;
+  return typeof document === 'undefined' ? content : createPortal(content, document.body);
 }
 
 export function PreviewNotice() {

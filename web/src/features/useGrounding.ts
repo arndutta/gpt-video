@@ -17,31 +17,36 @@ export function useGrounding() {
   const statisticsBusy = useRef<AbortController | null>(null);
   const historyBusy = useRef<AbortController | null>(null);
   const knownUploads = useRef(new Map<string, GroundingUpload>());
+  const historyVersion = useRef(0);
+  const statisticsVersion = useRef(0);
 
-  const refreshStatistics = useCallback(async () => {
+  const refreshStatistics = useCallback(async (): Promise<void> => {
     const controller = lifetime.current;
     if (!controller || controller.signal.aborted || statisticsBusy.current === controller) return;
     statisticsBusy.current = controller;
+    const version = statisticsVersion.current;
     setRefreshingStatistics(true);
     try {
       const value = await api<GroundingStatistics>('/grounding/collections', { signal: controller.signal });
-      if (!controller.signal.aborted) { setStatistics(value); setStatisticsError(''); }
+      if (!controller.signal.aborted && version === statisticsVersion.current) { setStatistics(value); setStatisticsError(''); }
     } catch (reason) {
-      if (!controller.signal.aborted) setStatisticsError(errorMessage(reason));
+      if (!controller.signal.aborted && version === statisticsVersion.current) setStatisticsError(errorMessage(reason));
     } finally {
       if (statisticsBusy.current === controller) statisticsBusy.current = null;
       if (!controller.signal.aborted) setRefreshingStatistics(false);
+      if (!controller.signal.aborted && version !== statisticsVersion.current) void refreshStatistics();
     }
   }, []);
 
-  const refreshHistory = useCallback(async () => {
+  const refreshHistory = useCallback(async (): Promise<void> => {
     const controller = lifetime.current;
     if (!controller || controller.signal.aborted || historyBusy.current === controller) return;
     historyBusy.current = controller;
+    const version = historyVersion.current;
     setRefreshingHistory(true);
     try {
       const value = await api<{ items: GroundingUpload[] }>('/grounding/uploads', { signal: controller.signal });
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted || version !== historyVersion.current) return;
       const completed = value.items.some(job => {
         const previous = knownUploads.current.get(job.id);
         return previous && uploadPending(previous) && !uploadPending(job);
@@ -49,12 +54,13 @@ export function useGrounding() {
       knownUploads.current = new Map(value.items.map(job => [job.id, job]));
       setUploads(value.items);
       setHistoryError('');
-      if (completed) void refreshStatistics();
+      if (completed) { statisticsVersion.current += 1; void refreshStatistics(); }
     } catch (reason) {
-      if (!controller.signal.aborted) setHistoryError(errorMessage(reason));
+      if (!controller.signal.aborted && version === historyVersion.current) setHistoryError(errorMessage(reason));
     } finally {
       if (historyBusy.current === controller) historyBusy.current = null;
       if (!controller.signal.aborted) { setRefreshingHistory(false); setHistoryLoaded(true); }
+      if (!controller.signal.aborted && version !== historyVersion.current) void refreshHistory();
     }
   }, [refreshStatistics]);
 
@@ -81,9 +87,10 @@ export function useGrounding() {
     try {
       const job = await api<GroundingUpload>('/grounding/uploads', { method: 'POST', body, signal: controller.signal });
       if (controller.signal.aborted) return;
+      historyVersion.current += 1;
       knownUploads.current.set(job.id, job);
       setUploads(current => [job, ...current.filter(item => item.id !== job.id)]);
-      if (!uploadPending(job)) void refreshStatistics();
+      if (!uploadPending(job)) { statisticsVersion.current += 1; void refreshStatistics(); }
       return job;
     } catch (reason) {
       if (!controller.signal.aborted) setUploadError(errorMessage(reason));

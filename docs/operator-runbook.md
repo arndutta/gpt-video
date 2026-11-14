@@ -50,6 +50,8 @@ After saving, choose **Verify gateway**. The backend checks the current four ali
 against the gateway's model list and displays the result. This makes no model-generation
 call, and explicitly does not certify structured generation or reasoning quality. Changing
 the URL, credential, aliases or TLS setting invalidates the earlier readiness result.
+Verification has a total 10-second deadline, including streamed response reads. A timeout
+uses the normal unavailable error; fix access before trying again.
 
 For a strict startup probe, provide `GATEWAY_URL`, `GATEWAY_API_KEY`, and all four
 `LLM_MODEL_*` aliases in process environment, then use:
@@ -283,7 +285,7 @@ unverified; unavailable optional feed data is visibly degraded.
 | Telemetry failure | Continue business safely, inspect monitor availability/dropped counts, restore writable storage/optional tracing. |
 
 Run `.venv/bin/python -m pytest -q`, `npm test`, and `npm run build` before release.
-The 2026-11-12 local verification passes 451 backend tests, 29 DOM interactions and the
+The 2026-11-12 local verification passes 457 backend tests, 54 DOM tests and the
 UI build. `scripts.acceptance_demo` also passes all 56 isolated W1–W9 cases.
 Against running services, `scripts.operations_smoke`, `scripts.smoke`, and
 `scripts.grounding_smoke` verify read-only previews/scenarios and local knowledge without
