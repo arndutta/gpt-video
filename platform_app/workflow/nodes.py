@@ -16,11 +16,25 @@ from platform_app.governance.stability import analyze_stability, damping_bounds
 from platform_app.tools import AnalysisError, analyze_catalog
 from platform_app.tools.quality import quality_report
 from platform_app.tools.context import business_context, effective_catalog
+from .prompts import narrative_prompt, strategy_prompt
 from .schemas import CitedNarrative, StrategyNarrative
+from .validation import narrate_verdicts, require_policy
 
 
 def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, allow_nan=False).encode()).hexdigest()
+
+
+async def owned_gather(*requests):
+    """A stage cannot exit while a sibling request is still using its resources."""
+    tasks = [asyncio.ensure_future(request) for request in requests]
+    try:
+        return await asyncio.gather(*tasks)
+    except BaseException:
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        raise
 
 
 class AgentNodes:
@@ -43,7 +57,7 @@ class AgentNodes:
             except (ValueError, OSError):
                 return [], "Optional competitor feed unavailable; uncertainty increased and confidence reduced."
 
-        context, optional, grounding, history, family_catalog = await asyncio.gather(
+        context, optional, grounding, history, family_catalog = await owned_gather(
             o.commerce.context(category=request.get("category"), sku_ids=request.get("sku_ids")),
             competitors(), o.grounding.retrieve("Retail pricing policy market inventory safety guidance", "analyst"),
             o.commerce.all("/price-history"), o.commerce.all("/catalog"))
@@ -63,14 +77,14 @@ class AgentNodes:
                  "competitor_observations": len(feed), "source_as_of": context["as_of"],
                  "corpus_version": grounding.corpus_version,
                  "business_signals": await o.run_cpu(business_context, context, feed)}
-        narrative, anomaly_narrative = await asyncio.gather(
+        narrative, anomaly_narrative = await owned_gather(
             o.llm.generate(CitedNarrative, role="analyst", query="Retail pricing market and inventory context",
                            facts=facts, run_id=state["run_id"],
-                           prompt="Explain the competitive and inventory context. Do not invent observations.",
+                           prompt=narrative_prompt("Explain the competitive and inventory context. Do not invent observations."),
                            policy_version=str(o.governance.mode()["policy_version"])),
             o.llm.generate(CitedNarrative, role="narrator", query="Retail pricing data quality and anomaly commentary",
                            facts={"quality": quality, "business_signals": facts["business_signals"]}, run_id=state["run_id"],
-                           prompt="Describe observed quality warnings and anomalies in business language, retaining pending or missing information.",
+                           prompt=narrative_prompt("Describe observed quality warnings and anomalies in business language, retaining pending or missing information."),
                            policy_version=str(o.governance.mode()["policy_version"])))
         o.emit("tool_completed", run_id=state["run_id"], agent="data_context",
                           latency_ms=(time.perf_counter() - started) * 1000, status="ok")
@@ -123,7 +137,7 @@ class AgentNodes:
         narrative = await o.llm.generate(CitedNarrative, role="analyst", query="Interpret elasticity forecast uncertainty and baseline",
                                          facts={"aggregate": report["aggregate"], "configuration": report["configuration"],
                                                 "skipped": report["skipped"], "numeric_hash": artifact_hash},
-                                         run_id=state["run_id"], prompt="Interpret the deterministic forecast. Preserve its uncertainty and limitations.",
+                                         run_id=state["run_id"], prompt=narrative_prompt("Interpret the deterministic forecast. Preserve its uncertainty and limitations."),
                                          policy_version=str(o.governance.mode()["policy_version"]))
         return {"report": report, "numeric_hash": artifact_hash, "quantitative_narrative": narrative.model_dump()}
 
@@ -135,15 +149,16 @@ class AgentNodes:
         recommendations = report["recommendations"]
         reasons = {}
         # Small sequential batches bound context/output size and gateway pressure.
-        for offset in range(0, len(recommendations), 25):
-            batch = recommendations[offset:offset + 25]
+        batch_size = o.settings_provider().strategy_batch_size
+        for offset in range(0, len(recommendations), batch_size):
+            batch = recommendations[offset:offset + batch_size]
             facts = [{k: item[k] for k in ("sku", "current_price", "proposed_price", "delta_pct", "confidence",
                                           "confidence_factors", "optimal_price_uncertainty", "elasticity", "impact",
                                           "competitive_gap_pct", "inventory_pressure")}
                      for item in batch]
             result = await o.llm.generate(StrategyNarrative, role="strategist", query="Pricing policy strategy rationale for retail SKUs",
                                           facts={"recommendations": facts, "numeric_hash": state["numeric_hash"]},
-                                          run_id=state["run_id"], prompt="Explain each supplied SKU's computed price, tradeoffs and uncertainty. Return exactly the supplied SKU identifiers.",
+                                          run_id=state["run_id"], prompt=strategy_prompt("Explain each supplied SKU's computed price, tradeoffs and uncertainty."),
                                           policy_version=str(o.governance.mode()["policy_version"]))
             if Counter(r.sku for r in result.recommendations) != Counter(i["sku"] for i in batch):
                 raise AnalysisError("The grounded strategy omitted or duplicated a SKU.", "strategy_contract_failed")
@@ -156,22 +171,18 @@ class AgentNodes:
     async def validation(self, state):
         self.stage(state, "validation_compliance")
         o = self.owner
-        if state["report"]["configuration"]["numeric_policy_version"] != o.governance.mode()["policy_version"]:
-            raise AnalysisError("Policy changed after the numeric stage. Start a new run to recompute its constraints.", "stale_policy")
+        policy_version = state["report"]["configuration"]["numeric_policy_version"]
+        require_policy(o, policy_version)
         items = await o.governance.register(state["run_id"], state["report"]["recommendations"],
                                             catalog=state["context"]["catalog"], history=state["history"], activate=False)
-        narrative = await o.llm.generate(CitedNarrative, role="strategist", query="Explain retail compliance veto and review band thresholds",
-                                         facts={"bands": dict(Counter(i["band"] for i in items)),
-                                                "verdicts": [{"sku": i["sku"], "band": i["band"], "compliance": i["compliance"]} for i in items]},
-                                         run_id=state["run_id"], prompt="Explain the deterministic verdicts. A model explanation cannot change any rule or approval band.",
-                                         policy_version=str(o.governance.mode()["policy_version"]))
+        narrative = await narrate_verdicts(o, state["run_id"], items, policy_version)
         report = {**state["report"], "kind": "grounded", "type": "grounded_recommendations",
                   "recommendations": items, "executable": False, "summary": state["report"]["aggregate"],
                   "data_narrative": state["data_narrative"], "quantitative_narrative": state["quantitative_narrative"],
-                  "validation_narrative": narrative.model_dump()}
+                  "validation_narrative": narrative}
         return {"report": report, "item_ids": [i["id"] for i in items],
                 "review_ids": [i["id"] for i in items if i["status"] in {"pending_review", "hold", "escalated"}],
-                "validation_narrative": narrative.model_dump()}
+                "validation_narrative": narrative}
 
     async def execution(self, state):
         self.stage(state, "execution")

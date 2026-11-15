@@ -1,5 +1,6 @@
 """Exercise the running local controls and constrained scenarios without changing prices."""
 
+import argparse
 import json
 from pathlib import Path
 import time
@@ -7,8 +8,12 @@ import time
 import httpx
 
 
-def main():
-    with httpx.Client(base_url="http://127.0.0.1:5173", timeout=30) as client:
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--base-url", default="http://127.0.0.1:5173")
+    parser.add_argument("--output", type=Path, default=Path("data/operations_smoke_result.json"))
+    args = parser.parse_args(argv)
+    with httpx.Client(base_url=args.base_url, timeout=30, trust_env=False) as client:
         control = client.get("/api/control")
         control.raise_for_status()
         control = control.json()
@@ -59,8 +64,10 @@ def main():
                   "shared_scenario_forecast": True, "prices_and_versions_unchanged": True,
                   "monitor_and_audit_available": True, "a2a_card_version": "0.3.0",
                   "live_gateway_verified": False, "browser_visual_qa": "separate verification"}
-        Path("data/operations_smoke_result.json").write_text(json.dumps(report, indent=2) + "\n")
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(report, indent=2) + "\n")
         print(json.dumps(report, indent=2))
+        return report
 
 
 if __name__ == "__main__":

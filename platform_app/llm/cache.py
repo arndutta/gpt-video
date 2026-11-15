@@ -51,10 +51,14 @@ class ResponseCache:
 
     @contextmanager
     def connection(self):
-        with sqlite3.connect(self.path, timeout=10) as db:
+        db = sqlite3.connect(self.path, timeout=10)
+        try:
             db.row_factory = sqlite3.Row
             db.execute("PRAGMA journal_mode=WAL")
-            yield db
+            with db:
+                yield db
+        finally:
+            db.close()
 
     @staticmethod
     def keys(namespace: dict, prompt: str, query: str):

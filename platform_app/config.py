@@ -34,6 +34,9 @@ class Settings(BaseModel):
     pricing_model_strategist: str | None = Field(default=None, max_length=200)
     llm_timeout_seconds: float = Field(default=60, ge=1, le=300)
     llm_transport_retries: int = Field(default=2, ge=0, le=4)
+    strategy_batch_size: int = Field(default=25, ge=1, le=25)
+    validation_batch_size: int = Field(default=25, ge=1, le=25)
+    llm_max_envelope_bytes: int | None = Field(default=None, ge=1)
     llm_input_cost_per_million: float = Field(default=0.10, ge=0, le=10000)
     llm_output_cost_per_million: float = Field(default=0.40, ge=0, le=10000)
     langfuse_enabled: bool = False
@@ -96,6 +99,8 @@ class Settings(BaseModel):
             **{f"LLM_PRICING_MODEL_{role.upper()}": f"pricing_model_{role}"
                for role in ("router", "narrator", "analyst", "strategist")},
             "LLM_TIMEOUT_SECONDS": "llm_timeout_seconds", "LLM_TRANSPORT_RETRIES": "llm_transport_retries",
+            "LLM_STRATEGY_BATCH_SIZE": "strategy_batch_size", "LLM_MAX_ENVELOPE_BYTES": "llm_max_envelope_bytes",
+            "LLM_VALIDATION_BATCH_SIZE": "validation_batch_size",
             "LLM_INPUT_COST_PER_MILLION": "llm_input_cost_per_million",
             "LLM_OUTPUT_COST_PER_MILLION": "llm_output_cost_per_million",
             "LANGFUSE_ENABLED": "langfuse_enabled", "LANGFUSE_HOST": "langfuse_host",

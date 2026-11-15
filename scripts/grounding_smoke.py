@@ -8,11 +8,12 @@ import time
 import httpx
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://127.0.0.1:5173")
-    args = parser.parse_args()
-    with httpx.Client(base_url=args.base_url, timeout=60) as client:
+    parser.add_argument("--output", type=Path, default=Path("data/grounding_smoke_result.json"))
+    args = parser.parse_args(argv)
+    with httpx.Client(base_url=args.base_url, timeout=60, trust_env=False) as client:
         health = client.get("/api/health")
         health.raise_for_status()
         assert health.json()["commerce"]["status"] == "ok"
@@ -61,8 +62,10 @@ def main():
                   "upload_and_retrieval_seconds": round(time.perf_counter() - started, 3),
                   "retrievable_without_restart": True, "citation_resolves": True,
                   "browser_visual_qa": "unverified"}
-        Path("data/grounding_smoke_result.json").write_text(json.dumps(report, indent=2) + "\n")
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(report, indent=2) + "\n")
         print(json.dumps(report, indent=2))
+        return report
 
 
 if __name__ == "__main__":

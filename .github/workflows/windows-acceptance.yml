@@ -1,0 +1,68 @@
+name: Windows acceptance
+
+# Prepared here; native Windows acceptance is established only by a completed run.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - codex/windows-acceptance
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      DO_NOT_TRACK: '1'
+      LANGFUSE_ENABLED: 'false'
+      LIVE_COMPETITOR_ENABLED: 'false'
+    steps:
+      - name: Check out the selected commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.11.5'
+      - name: Install Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.4.1'
+          package-manager-cache: false
+      - name: Create the Python environment
+        run: python -m venv .venv
+      - name: Install locked Python dependencies
+        run: .venv\Scripts\python -m pip install -r requirements.lock
+      - name: Install locked frontend dependencies
+        run: npm --prefix web ci
+      - name: Prepare real local embeddings
+        run: .venv\Scripts\python -m scripts.rag prepare
+      - name: Verify real local embeddings
+        run: .venv\Scripts\python -m scripts.rag check
+      - name: Run backend regression checks
+        run: .venv\Scripts\python -m pytest -q --junitxml=data/windows-unit.junit.xml
+      - name: Test the frontend
+        run: npm --prefix web test
+      - name: Build the frontend
+        run: npm --prefix web run build
+      - name: Exercise isolated native service startup and shutdown
+        run: .venv\Scripts\python -m scripts.local_acceptance --output data/windows-native-acceptance.json
+      - name: Exercise the actual batch wrapper and graceful shutdown
+        run: .venv\Scripts\python -m scripts.windows_startup_check --output data/windows-batch-acceptance.json
+      - name: Retain acceptance reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-acceptance-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            data/windows-unit.junit.xml
+            data/windows-native-acceptance.json
+            data/windows-batch-acceptance.json
+          if-no-files-found: warn
+          retention-days: 7

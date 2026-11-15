@@ -36,14 +36,14 @@ backend behavior under those declared fixtures; it does not establish real model
 reliability/latency, product effectiveness, human review metrics, native browser
 interaction, Windows execution, or production release readiness.
 
-The latest isolated execution on 2026-11-14 (Asia/Kolkata) passes all nine workflows
-with **56 cases in 8.217s**, exit code 0, and an unchanged source digest during execution.
-Artifacts are `data/acceptance_demo_20261114_result.*`; the report identifies all 139
+The latest isolated execution on 2026-11-15 (Asia/Kolkata) passes all nine workflows
+with **56 cases in 10.022s**, exit code 0, and an unchanged source digest during execution.
+Artifacts are `data/acceptance_demo_windows_ready_20261115.*`; the report identifies all 157
 Python source files and every executed case. The same fixture and acceptance limits
-above apply. The full suite separately passes 471 backend tests and 67 DOM cases.
+above apply. The full suite separately passes 529 backend tests and 67 DOM cases.
 
 Latest verified Python-source SHA-256:
-`27ea15c9fc66f66352f35d352d72041e4fffcd7feb7aef0c898e10ce06518494`.
+`756aa4b732b817c9ec8f93584c59f349cc773109ee3827408ecd99abc979d56d`.
 
 The earlier isolated execution on 2026-11-12 (Asia/Kolkata) passed all nine workflows
 with 56 cases in 15.644s and subprocess exit code 0. The report confirms that the Python source hash
@@ -92,8 +92,10 @@ missing-gateway message. A subsequent real local LiteLLM grounded pre-flight pas
 in 6.589s with all four aliases and real MiniLM inference. Port checks were skipped
 for that probe because the existing services were running; the separately exercised
 Unix startup checked ports and actual readiness ordering. All local aliases map to
-one installed model. Its generation probe fails, so this does not establish a working
-chat model or corporate model-tier acceptance; see [local gateway evidence](local-gateway.md).
+one installed model. The November 12 generation probe failed; a subsequent unchanged
+bounded probe passes on November 14 after the installed Ollama runtime changed.
+Corporate model-tier acceptance and full live-pipeline reliability remain unverified;
+see [local gateway evidence](local-gateway.md).
 
 `startup.bat` uses the Windows virtual-environment interpreter and forwards the same
 arguments. Tests exercise Windows-style `node.exe` plus `node_modules/npm/bin/npm-cli.js`

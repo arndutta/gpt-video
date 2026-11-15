@@ -1,5 +1,84 @@
 # Optional local model integration
 
+## Working five-stage functional path — 2026-11-15 (Asia/Kolkata)
+
+The concise-narration functional diagnostic now **passes**: all five actual graph
+stages reach a persisted Supervised human-review interrupt for one SKU in **284.447s**.
+It uses real MiniLM, LiteLLM/Ollama and the complete original facts/schema. The one
+recommendation has a validated citation, its computed numerical artifact is unchanged,
+and Commerce prices/versions remain unchanged with zero price writes.
+
+This is a separately labelled **480-second functional observation window**; the default
+diagnostic deadline remains 240 seconds. It does not establish the unchanged requirement
+for 500 SKUs in under 300 seconds. The earlier failed 240-second attempts remain below.
+The safe artifact is `data/local_graph_functional_20261115.json`.
+
+Seven real provider calls include two ordinary single repairs. All observed token
+budgets fit context 4096 with batch 64/output limit 800; native input/context loss stays
+disabled. No input-truncation or runner-kill marker appears. All owned listeners and
+forwarders stop, no model remains loaded and temporary storage is removed. A single
+successful workflow is not statistical 99% post-repair validity or four distinct
+corporate model tiers.
+
+To reproduce this explicit functional diagnostic:
+
+```sh
+.venv/bin/python -m scripts.local_graph_probe --model phi3:mini --deadline-seconds 480 \
+  --output data/local_graph_functional_result.json
+```
+
+## Full graph verification — reconciled 2026-11-15 (Asia/Kolkata)
+
+The real 1-SKU graph still does not pass. After the output-length repair and sibling-task
+ownership fixes, both Data & Context responses recover with their normal one repair;
+that stage completes in **175.712s**. The **240.031s** overall deadline then interrupts
+Quantitative narration, before any recommendation reaches review. No larger real-model
+graph run or further generation retry followed. The report is
+`data/local_graph_probe_after_repair_20261114.json`.
+
+The reproducible diagnostic is:
+
+```sh
+.venv/bin/python -m scripts.local_graph_probe --model phi3:mini \
+  --output data/local_graph_probe_result.json
+```
+
+It uses real MiniLM, a real local model, fresh temporary Commerce data through the HTTP
+adapter and Supervised mode. An owned loopback forwarding guard preserves messages,
+schema and options while adding native `truncate=false` and `shift=false`; these fields
+are version-pinned to the verified Ollama 0.40.16 API contract. Oversized or uncertain
+requests cannot receive a passing context-budget claim. Normal citation validation,
+schema and numeric authority remain unchanged. It is a diagnostic, not an application
+fallback or a replacement for the corporate models.
+
+All five observed native request budgets fit 4096 tokens, without input truncation or
+runner-kill markers. The ordinary SDK usage is **5,308 input / 2,967 output tokens**;
+native metadata totals **8,335 / 3,767**, including a canceled inference that finishes
+during cleanup. The SDK snapshot must not be presented as total native consumption.
+Both owned listeners stop, all forwarders finish, no model remains loaded, and there
+are zero price writes. A November 15 read-only check independently reconfirms cleanup.
+Full workflow reliability, 500-SKU latency and release acceptance remain open.
+
+## Successful bounded probe — 2026-11-14 (Asia/Kolkata)
+
+A read-only check found the installed Ollama runtime had changed from the historical
+0.32.1 failure logs to **0.40.16**. This changed condition justified one isolated retry
+of the existing helper, preserving the full schema/evidence, 4096-token context,
+batch 64 and 800-token output limit. No model download or daemon configuration change
+was made. The earlier runner kill's cause remains unconfirmed.
+
+The real `GroundedLLM` request passes in **11.677s**, with one provider call, zero repair
+attempts, 419 input tokens, 109 output tokens, and one validated local-RAG citation.
+Proxy port 4002 is free after cleanup and Ollama reports no loaded model. The safe
+artifacts are `data/local_gateway_readiness_20261114.json` and
+`data/local_gateway_probe_20261114.json`.
+
+This establishes one working local structured generation. It does not establish a 99%
+validity rate, a 500-SKU live pipeline, four distinct corporate model tiers, or release
+readiness. The earlier failure records below remain historical evidence.
+
+## Helper and historical observations
+
 This explicit probe uses an **already installed** Ollama model through a separate
 LiteLLM proxy. It does not configure the running workbench, change prices, download
 models, change the Ollama service, or enable a fallback in the application.
@@ -76,7 +155,7 @@ The memory-only environment fields were restored afterward, the temporary proxy
 stopped, and there were zero model generations and price writes during this check.
 The metadata report is `data/local_grounded_preflight.json` (ignored runtime data).
 
-Generation remains blocked. Tiny requests failed with HTTP 400, reported safely
+Generation was blocked during the November 12 probes. Tiny requests failed with HTTP 400, reported safely
 as `gateway_call_failed`; no validated response or citations were produced. In the
 final bounded diagnostic, the native Ollama runner logged termination with
 **`signal: killed`** at `2026-11-12T00:26:01.108+05:30`, from `llama_server.go:976`.

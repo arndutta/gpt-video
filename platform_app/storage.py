@@ -2,7 +2,7 @@
 
 import json
 import sqlite3
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
@@ -43,10 +43,11 @@ class Store:
                        "WHERE status IN ('queued','running')")
             for row in interrupted:
                 self._audit(db, "system", "preview_interrupted", row["id"], {})
-        with sqlite3.connect(data_dir / "llm_cache.db") as db:
-            db.execute("PRAGMA journal_mode=WAL")
-            db.execute("CREATE TABLE IF NOT EXISTS cache_metadata (version INTEGER PRIMARY KEY)")
-            db.execute("INSERT OR IGNORE INTO cache_metadata VALUES(1)")
+        with closing(sqlite3.connect(data_dir / "llm_cache.db")) as db:
+            with db:
+                db.execute("PRAGMA journal_mode=WAL")
+                db.execute("CREATE TABLE IF NOT EXISTS cache_metadata (version INTEGER PRIMARY KEY)")
+                db.execute("INSERT OR IGNORE INTO cache_metadata VALUES(1)")
 
     @contextmanager
     def connection(self):

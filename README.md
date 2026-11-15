@@ -13,12 +13,12 @@ validated execution/revert, saved scenarios, feedback calibration, and an explic
 interval loop. These are local demonstration capabilities, not production authorization
 or evidence of measured business uplift.
 
-Latest verification: **471 backend tests**, **67 DOM tests**, the UI build,
+Latest verification: **529 backend tests**, **67 DOM tests**, the UI build,
 and the isolated **56-case W1–W9 demonstration** pass. T06 startup checks and T38
 functional acceptance are complete. An isolated local gateway passes real alias and
-embedding pre-flight checks, but its generation probe fails; see
-[local gateway evidence](docs/local-gateway.md). Working gateway generation,
-actual browser/viewport validation and product
+embedding pre-flight checks and a real five-stage, one-SKU workflow reaching human review;
+see [local gateway evidence](docs/local-gateway.md). Live 500-SKU performance, statistical
+reliability, actual browser/viewport validation and product
 effectiveness gates remain open; [the feasibility proof](docs/effectiveness-feasibility.md)
 shows why the unchanged +5% revenue target cannot be met on the current fixtures.
 
@@ -34,6 +34,14 @@ The November 14 reliability follow-up prevents stale query/scenario responses, k
 modal focus stable through updates, and repairs catalog refresh/pagination recovery.
 Further hardening fences checkpoint resumes during halt, isolates telemetry sinks,
 bounds gateway verification, and preserves policy drafts and upload status during requests.
+The native macOS acceptance runner verifies fresh 500-SKU HTTP previews, real upload/
+retrieval and owned service cleanup. Cache connections now close explicitly; failed
+concurrent workflow phases drain their peers, and truncated SDK output receives one
+safe structured repair without changing facts or schema.
+The real one-SKU functional run reaches Supervised review in 284.447s with unchanged
+computed numbers and zero price writes. Earlier 240-second failures remain recorded;
+the 500-SKU timing target is unchanged. A dedicated Windows CI branch/workflow and
+owned Job Object batch-wrapper harness are prepared but require an actual Windows run.
 
 ## Run locally
 
@@ -113,6 +121,8 @@ again after restart unless the launching process already has them.
 | `GATEWAY_URL`, `GATEWAY_PORT`, `GATEWAY_API_KEY` | Backend gateway configuration; URL commonly includes `/v1` |
 | `LLM_MODEL_ROUTER`, `LLM_MODEL_NARRATOR`, `LLM_MODEL_ANALYST`, `LLM_MODEL_STRATEGIST` | Required configured chat aliases for grounded runs |
 | `LLM_TIMEOUT_SECONDS`, `LLM_TRANSPORT_RETRIES` | Defaults 60 seconds / 2 bounded transient retries |
+| `LLM_STRATEGY_BATCH_SIZE`, `LLM_VALIDATION_BATCH_SIZE` | Defaults 25 / 25; explicit 1–25 SKU batches retain every complete input verdict/reasoning fact |
+| `LLM_MAX_ENVELOPE_BYTES` | Optional complete application messages/schema UTF-8 byte cap; rejects intact initial/repair inputs, not a wire-size or token-context guarantee |
 | `LLM_INPUT_COST_PER_MILLION`, `LLM_OUTPUT_COST_PER_MILLION` | Configured fallback USD estimates; defaults 0.10 / 0.40 |
 | `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE` | Preferred corporate CA trust through one backend TLS helper |
 | `ALLOW_INSECURE_TLS` | Default false; gates the runtime disable-verification toggle |
@@ -130,8 +140,9 @@ UI indicator. No browser-to-gateway model traffic or production identity/RBAC sy
 ```
 
 Gateway pre-flight checks `/models`. A successful model listing does not prove a model
-supports JSON Schema generation; a grounded run exercises that contract. No real chat
-gateway or remote Langfuse service has been verified in this development session.
+supports JSON Schema generation; a grounded run exercises that contract. One isolated
+local Ollama generation now passes. Corporate model tiers, statistical structured-output
+reliability and remote Langfuse remain unverified.
 
 ## Knowledge and caching
 
@@ -199,6 +210,10 @@ cd ..
 .venv/bin/python -m scripts.operations_smoke
 .venv/bin/python -m scripts.grounding_smoke
 .venv/bin/python -m scripts.acceptance_demo
+# Isolated native service startup/HTTP/upload/shutdown; requires prepared embeddings:
+.venv/bin/python -m scripts.local_acceptance --output data/native_acceptance_result.json
+# Real local retrieval/cache stages, explicit model fixture:
+.venv/bin/python -m scripts.cache_benchmark --samples 200 --output data/cache_stage_benchmark_result.json
 ```
 
 The suite includes service boundaries, deterministic numerics, compliance/mode decisions,

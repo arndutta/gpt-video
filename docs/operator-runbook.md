@@ -38,6 +38,48 @@ synthetic Commerce removes its prior history/receipts; normal startup never perf
 Use fresh dated data for freshness-gated demos. The fixed date above is for reproducible
 testing and will eventually be stale. Do not reset the user's working data for a demonstration.
 
+## Native acceptance checks
+
+For a repeatable native-host acceptance check, first stop any workbench services on
+8001/8000/5173, prepare the local embedding model, and run:
+
+```sh
+.venv/bin/python -m scripts.local_acceptance --output data/native_acceptance_result.json
+# Windows, from the repository root:
+.venv\Scripts\python -m scripts.local_acceptance --output data\native_windows_acceptance_result.json
+```
+
+The runner refuses occupied ports, uses fresh temporary 500-SKU storage, starts direct
+Commerce/platform/Vite children, exercises the HTTP preview/controls/upload paths, and
+checks unchanged prices/versions, zero price-history writes and owned-process cleanup.
+It removes its fixture storage and retains only the metadata report. It does not use
+the working Commerce database or require a gateway. It requires the existing prepared
+embedding cache and installed Python/Node dependencies; it never downloads models.
+The report applies only to the host where it ran. Verify `startup.bat` separately on
+Windows; the direct-child runner does not claim batch-wrapper or browser acceptance.
+
+The dedicated native Windows batch-wrapper check is:
+
+```sh
+.venv\Scripts\python -m scripts.windows_startup_check --output data\windows_batch_acceptance.json
+```
+
+It launches the real `startup.bat` suspended and atomically assigned to an owned Windows
+Job Object, then resumes it in its own process group with fresh temporary data. It
+requests graceful shutdown with CTRL_BREAK; job ownership survives wrapper exit.
+Handle-based forced cleanup prevents leftover owned processes and fails graceful-
+shutdown acceptance. The launcher
+handles SIGBREAK on Windows; the dependency lock excludes unsupported `uvloop` there.
+
+`.github/workflows/windows-acceptance.yml` prepares a Windows runner, installs locked
+dependencies, explicitly prepares real embeddings, runs backend/frontend checks, then
+both native acceptance commands. It runs manually or on a push to the dedicated
+`codex/windows-acceptance` branch only. A prepared workflow is not Windows evidence:
+retain its completed reports before closing the native Windows gate.
+The dedicated branch push is the initial execution path. GitHub manual dispatch also
+requires the workflow definition to be available on the repository's default branch;
+see [GitHub's manual-run requirements](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow).
+
 ## Gateway, TLS, and secret lifecycle
 
 Open Settings from the global gear. Configure URL (including the gateway's API prefix),
@@ -63,6 +105,18 @@ For a strict startup probe, provide `GATEWAY_URL`, `GATEWAY_API_KEY`, and all fo
 The gateway probe lists actual available model IDs when aliases mismatch. Listing models
 does not verify chat schema support or quality; perform W1 against the real gateway.
 No key or real endpoint is included in repository examples or test fixtures.
+
+For gateways with smaller supported requests, export `LLM_STRATEGY_BATCH_SIZE` and
+`LLM_VALIDATION_BATCH_SIZE` (each 1–25, default 25) before startup. Strategy and validation
+retain every full per-SKU input; validation cannot activate items until all batches
+succeed and policy versions remain unchanged. Single-batch validation keeps the existing
+narrative shape; multi-batch reports retain each complete response and its SKU IDs.
+
+`LLM_MAX_ENVELOPE_BYTES` optionally rejects a complete application messages/schema
+envelope above the configured UTF-8 byte count, including added repair feedback.
+It never truncates facts or evidence. This is not an SDK wire-size limit or an estimate
+of model token capacity. A rejection requires a smaller scope/batch or a capacity-backed
+configuration change; merely raising the byte cap does not prove a request fits.
 
 Use `SSL_CERT_FILE` or `REQUESTS_CA_BUNDLE` for a corporate CA bundle. Verification is on
 by default. `ALLOW_INSECURE_TLS=true` is required before Settings permits a bypass; enabling
@@ -285,7 +339,7 @@ unverified; unavailable optional feed data is visibly degraded.
 | Telemetry failure | Continue business safely, inspect monitor availability/dropped counts, restore writable storage/optional tracing. |
 
 Run `.venv/bin/python -m pytest -q`, `npm test`, and `npm run build` before release.
-The 2026-11-12 local verification passes 457 backend tests, 54 DOM tests and the
+The 2026-11-15 local verification passes 529 backend tests, 67 DOM tests and the
 UI build. `scripts.acceptance_demo` also passes all 56 isolated W1–W9 cases.
 Against running services, `scripts.operations_smoke`, `scripts.smoke`, and
 `scripts.grounding_smoke` verify read-only previews/scenarios and local knowledge without
@@ -293,7 +347,9 @@ changing Commerce prices. Use the project interpreter, for example
 `.venv/bin/python -m scripts.operations_smoke`.
 Running-service `scripts.smoke` checks a 500-SKU preview, responsiveness, scenario parity,
 and unchanged prices; `scripts.grounding_smoke` checks real-model runtime upload/retrieval.
-Live gateway reasoning, browser visual/interaction behavior, Windows startup, human labels,
-and mature business effectiveness remain external acceptance gates until directly observed.
+One real local five-stage, one-SKU workflow reaches Supervised review in 284.447s with
+validated citations and no price writes. Real 500-SKU model timing/statistical reliability,
+browser visual/interaction behavior, native Windows, human labels and mature business
+effectiveness remain acceptance gates until directly observed.
 Use [task.md](../task.md) for the dated verification record; do not mark unavailable targets
 passed because a deterministic test fixture or document describes the desired behavior.

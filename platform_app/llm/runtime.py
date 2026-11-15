@@ -3,6 +3,7 @@
 import asyncio
 from collections.abc import Callable
 from pathlib import Path
+from types import SimpleNamespace
 
 import httpx
 from langchain.chat_models import init_chat_model
@@ -13,6 +14,7 @@ from platform_app.config import Settings, tls_context
 
 from .cache import ResponseCache
 from .monitor import CallMonitor, MetadataOnlyCallback
+from .request_limits import enforce_envelope_limit
 from .safety import GroundedLLMError, canonical, digest, redact, reject_personal_pricing, repair_feedback, validate_citations
 
 
@@ -83,6 +85,13 @@ class GroundedLLM:
             except asyncio.CancelledError:
                 raise
             except Exception as error:
+                if error.__class__.__name__ == "LengthFinishReasonError":
+                    completion = getattr(error, "completion", None)
+                    counts = getattr(completion, "usage", None)
+                    raw = SimpleNamespace(usage_metadata={
+                        "input_tokens": getattr(counts, "prompt_tokens", 0),
+                        "output_tokens": getattr(counts, "completion_tokens", 0)},
+                        response_metadata={"model_name": getattr(completion, "model", None)})
                 code = getattr(error, "status_code", None)
                 if code not in {429, 500, 502, 503, 504} or attempt >= settings.llm_transport_retries:
                     raise
@@ -139,12 +148,15 @@ class GroundedLLM:
                     pass
         messages = [("system", SYSTEM), ("human", canonical({"instruction": clean_prompt, "query": clean_query,
                     "facts": clean_facts, "facts_sha256": digest(clean_facts), "evidence": evidence}))]
+        enforce_envelope_limit(schema, messages, settings.llm_max_envelope_bytes)
         try:
             provider = self._provider(settings, role)
             chain = provider.with_structured_output(schema, method="json_schema", include_raw=True, strict=True)
         except Exception:
             raise GroundedLLMError("gateway_configuration_failed", "The configured model could not initialize structured output. Check gateway aliases and TLS settings.") from None
         for repair in range(2):
+            if repair:
+                enforce_envelope_limit(schema, messages, settings.llm_max_envelope_bytes)
             parser_error = None
             try:
                 response = await self._invoke(chain, messages, settings, role, run_id)
@@ -152,7 +164,7 @@ class GroundedLLM:
                 raise
             except Exception as error:
                 # Parser errors can precede include_raw envelopes; repair only those errors.
-                if error.__class__.__name__ not in {"OutputParserException", "ValidationError"}:
+                if error.__class__.__name__ not in {"OutputParserException", "ValidationError", "LengthFinishReasonError"}:
                     raise GroundedLLMError("gateway_call_failed", "The gateway call failed after bounded transport retries. Check access, model availability, and TLS.") from None
                 response = None
                 parser_error = error

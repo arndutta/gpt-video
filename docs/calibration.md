@@ -1,5 +1,38 @@
 # Evaluation-only threshold study — 2026-11-10
 
+## Fresh objective comparison — 2026-11-14 (Asia/Kolkata)
+
+The expanded study now covers balanced, revenue-weighted and margin-weighted objectives
+on fresh November 14 fixtures, seeds 42 and 43, 500 SKUs each, 180 historical days,
+1,000 draws and a 14-day horizon. All six cases model 500/500 SKUs without skips.
+The 36 threshold combinations per case produce **216 rows**, with zero compliance
+violations. The report is `data/calibration_objectives_20261114_result.json`.
+
+```sh
+.venv/bin/python -m scripts.calibrate --as-of 2026-11-14 \
+  --objectives balanced revenue margin --output data/calibration_objectives_20261114_result.json
+```
+
+| Objective | Forecast revenue vs baseline, seeds 42 / 43 | High-confidence prices within 10%, seeds 42 / 43 | Default predicted Auto counts, seeds 42 / 43 |
+|---|---:|---:|---:|
+| Balanced | -6.309% / -6.986% | 411/420 / 400/409 | 14 / 10 |
+| Revenue-weighted | -2.845% / -3.119% | 392/396 / 391/393 | 11 / 8 |
+| Margin-weighted | -12.136% / -12.553% | 451/461 / 436/452 | 42 / 27 |
+
+All six cases improve forecast gross profit and margin rate over their baseline. All
+six fail the unchanged +5% revenue and all-high-confidence-prices-within-10% targets.
+The largest predicted Auto share across the study is 19%; snapshot eligibility is not
+an observed Assisted execution rate. Even the default margin-objective Auto subsets
+contain two price errors out of 42 and one out of 27, respectively.
+
+No default, production policy, price constraint, baseline, target or confidence denominator
+was changed. This adds objective sensitivity evidence; it does not close calibration
+or business-effectiveness acceptance. Human approval/escalation labels, complete mature
+daily aggregate sales at applied prices, multiple disjoint outcome windows, and an owner
+decision about the revenue evaluation envelope remain necessary.
+
+## Historical balanced-objective study
+
 This is the historical study before `confidence-v2-selection`. Its observations are
 retained rather than rewritten. The current [decision-uncertainty and feasibility
 review](effectiveness-feasibility.md) records the corrected model and explicitly dated

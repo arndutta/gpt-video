@@ -2,7 +2,24 @@
 
 Date: 2026-11-10. Local application: `http://127.0.0.1:5173`.
 
+## Browser-host recheck — 2026-11-15 (Asia/Kolkata)
+
+A bounded `cua.getState()` inventory returns in 4.45s with no browser surfaces and
+**"The browser access host is unavailable"**. Its completion summary is recorded once.
+No navigation, screenshot or application action follows that inventory. A subsequent
+inventory returns the same error in 3.76s. One native `cua.getApp('Google Chrome')`
+request, with a requested 10,000ms timeout, then returns **"js execution timed out;
+kernel reset"** after 276.39s. It supplies no screenshot or accessibility state; its
+completion summary is recorded once. No native input or alternate automation follows.
+The passing native service/HTTP runner does not establish painted layout, browser
+keyboard behavior or ordinary browser interaction latency. Those gates remain open.
+
 ## Browser-host recheck — 2026-11-14 (Asia/Kolkata)
+
+During the subsequent acceptance pass, another bounded `cua.getState()` inventory
+returned in 5.14s with no browser surfaces and the same host-unavailable error.
+Its completion summary was recorded. No native fallback, navigation, screenshot or
+application action followed; actual browser acceptance remains open.
 
 One `cua.getState()` inventory with a 10,000ms timeout returned in 2.43s. Native apps
 were listed, the browser list was empty, and the error remained **"The browser access

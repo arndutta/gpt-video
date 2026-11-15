@@ -1,5 +1,6 @@
 """Check the running three-service preview without applying any prices."""
 
+import argparse
 import json
 from pathlib import Path
 import time
@@ -7,8 +8,12 @@ import time
 import httpx
 
 
-def main():
-    with httpx.Client(base_url="http://127.0.0.1:5173", timeout=30) as client:
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--base-url", default="http://127.0.0.1:5173")
+    parser.add_argument("--output", type=Path, default=Path("data/smoke_result.json"))
+    args = parser.parse_args(argv)
+    with httpx.Client(base_url=args.base_url, timeout=30, trust_env=False) as client:
         response = client.get("/")
         response.raise_for_status()
         ui_status = response.status_code
@@ -53,8 +58,10 @@ def main():
                     "scenario_matches_preview": True, "prices_unchanged": True,
                     "ui_http_status": ui_status,
                     "browser_visual_qa": "unverified"}
-        Path("data/smoke_result.json").write_text(json.dumps(evidence, indent=2) + "\n")
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(evidence, indent=2) + "\n")
         print(json.dumps(evidence, indent=2))
+        return evidence
 
 
 if __name__ == "__main__":

@@ -1,4 +1,152 @@
-# Development validation — 2026-11-14 (Asia/Kolkata)
+# Development validation — 2026-11-15 (Asia/Kolkata)
+
+## Working real-model functional workflow
+
+Final checks pass **529 backend tests in 22.49s**, the unchanged **67 DOM tests in
+13.015s**, strict TypeScript/Vite build (Vite 1.92s), and **56 isolated W1–W9 cases
+in 10.022s**. A final actual macOS service run passes in **11.264s**, with a 3.361s
+500-SKU HTTP preview, 38.6ms concurrent health, 0.465s real upload-to-retrieval,
+unchanged prices/versions, zero price writes and full owned-service cleanup. Its
+157-file Python source digest matches the final isolated demo; both are stable.
+Artifacts are `data/local_acceptance_final_20261115.json` and
+`data/acceptance_demo_windows_ready_20261115.*`.
+
+The real local five-stage graph now reaches **Supervised human review** for one SKU
+in **284.447s**, with a validated citation, unchanged computed numerical artifact and
+zero Commerce price writes. The deliberately selected functional observation window
+is 480 seconds; the prior 240-second failures remain recorded. This does not measure
+the unchanged 500-SKU/300-second performance requirement. Evidence is
+`data/local_graph_functional_20261115.json` and [the local gateway record](local-gateway.md).
+
+Data & Context completes in 72.895s, Quantitative in 125.249s, Strategy in 59.564s and
+Validation in 26.660s, then deterministic Execution reaches its real review interrupt.
+Seven provider calls include two ordinary repairs. Complete supplied context and schemas
+are retained and all native token budgets fit; no facts are truncated or prices model-authored.
+Cleanup verifies no loaded model, active forwarder or owned listener remains.
+
+The fresh 500-SKU quantitative/model-fixture benchmark records 2.146s numerical analysis,
+0.375s Monte Carlo compute and an 11.41ms matched one-SKU scenario. Its actual five-node
+graph reaches review in 6.089s with all 500 cited recommendations, real MiniLM and
+43 explicit typed model-fixture calls (20 strategy batches and 20 validation batches,
+plus three context/quantitative calls). This fixture result demonstrates complete batch
+coverage, not live 500-SKU generation latency. Artifact: `data/benchmark_batched_20261115_result.json`.
+
+## Concise narration, bounded batches and Windows preparation
+
+The next implementation follow-up gives every initial narrative concise prose guidance
+while explicitly retaining material warnings, assumptions, anomalies, missing evidence,
+uncertainty and constraints. The full input facts and response schemas remain intact;
+word counts are soft targets, not filters on evidence or schema limits.
+
+Strategy and validation each support explicit 1–25 SKU batches (default 25). Validation
+sends every complete per-SKU compliance verdict exactly once and checks the numeric
+policy version before and after every call. Single-batch narrative shape is unchanged;
+multi-batch reports retain every whole response and its SKU IDs. Items remain drafts
+until all validation batches succeed. Optional `LLM_MAX_ENVELOPE_BYTES` rejects intact
+application messages/schema envelopes, including repair growth; it is not a model-token
+capacity or SDK wire-size guarantee.
+
+The initial checks for these changes pass **520 backend tests in 25.40s**, **67 DOM
+tests in 13.015s**, and strict TypeScript/Vite build (Vite 1.92s). An actual concise
+1-SKU probe completes Data & Context in **70.795s** and Quantitative in **113.570s**,
+then its **240.027s** deadline interrupts Strategy. The native calls preserve all
+input budgets, schemas and citations; cleanup verifies no owned listeners/forwarders
+or loaded model and zero price writes. This observed progress is not a completed
+workflow or a 500-SKU timing result. Evidence: `data/local_graph_concise_20261115.json`.
+
+The Windows lock now excludes unsupported `uvloop` without changing its pinned version,
+and the launcher handles SIGBREAK. A dedicated native batch-wrapper harness atomically
+assigns an owned Windows Job Object before the suspended root can execute, so descendant
+ownership survives wrapper exit. Forced or uncertain cleanup fails acceptance. Workflow
+PowerShell steps each execute one command so later success cannot mask earlier failure.
+The least-permission, SHA-pinned Windows CI workflow is prepared locally; it does not
+constitute native Windows acceptance until published, executed and its reports pass.
+
+## Final live graph result and remaining acceptance
+
+The earlier repaired 1-SKU graph test on November 14 remains **failed acceptance**:
+Data & Context completes in **175.712s**, recovering both truncated responses through
+the ordinary single repair, then the overall **240-second deadline** interrupts
+Quantitative narration at **240.031s**. It produces no recommendation or human-review
+interrupt. Final recommendation integrity is therefore unmeasured, rather than a claim
+that a changed numerical result was detected. No 500-SKU real-model run followed.
+
+All five observed native requests retain the full facts/schema, context 4096, batch 64,
+output limit 800 and explicit native `truncate=false` / `shift=false`. Observed budgets
+fit; no input-truncation or runner-kill marker appears. Commerce prices/versions stay
+unchanged and there are **zero price writes**. The temporary proxy and guard stop, no
+forwarders or model remain active, and temporary storage is removed. Evidence is
+`data/local_graph_probe_after_repair_20261114.json`.
+
+The SDK observes **5,308 input / 2,967 output tokens** before cancellation. Native
+metadata records **8,335 / 3,767** in total because the already-sent fifth inference
+finishes during cleanup after its SDK call is canceled. The SDK usage snapshot is not
+a measurement of all admitted native consumption; neither is a real local electricity
+or hardware-cost measurement.
+
+Read-only verification on November 15 again finds ports 8001/8000/5173/4002 free and
+zero loaded models. The current 146-file Python source digest still matches the source
+that passed 492 backend tests and the 56-case isolated demonstration; the frontend is
+unchanged from its passing 67-case/build run. The browser host still returns no browser
+surfaces. Native Windows, full live workflow/500-SKU timing, statistical model validity,
+real human/mature-outcome measures, and release signoff remain open. The user confirms
+no external gateway is available. Optional remote integrations remain unconfigured.
+`data/acceptance_reconciliation_20261115.json` consolidates these results without
+relabelling the failed graph or unmet business targets as passed.
+
+## Live local and cache acceptance follow-up
+
+Final regression checks pass **492 backend tests in 22.01s**, **67 DOM tests in 13.069s**,
+source/rendering checks and strict TypeScript/Vite build (Vite 1.43s). The isolated
+W1–W9 fixture demonstration passes **56 cases in 8.178s**. Its source digest matches
+the actual native service acceptance run: 146 Python files, stable throughout both.
+
+`scripts.local_acceptance` passes on macOS in **9.732s** with real Commerce/platform/Vite
+processes, fresh temporary 500-SKU storage and real MiniLM. The 1,000-draw HTTP preview
+takes **3.147s**, concurrent health **38.96ms**, and real upload-to-retrieval **0.255s**.
+Matched scenario/preview forecasts, constrained preview, monitor/audit/A2A checks pass.
+All 500 prices/versions are unchanged, price history remains empty, owned services stop,
+ports are free and temporary storage is removed. Evidence is
+`data/local_acceptance_20261114_result.json`. This is native service/HTTP evidence,
+not painted UI, native Windows, shell/batch wrapper or live-generation acceptance.
+
+After read-only diagnostics identified Ollama **0.40.16** in place of the historical
+0.32.1 failure runtime, one unchanged local generation probe succeeds in **11.677s**:
+one real provider call, valid `CitedNarrative`, one current local-RAG citation, no repair,
+419 input / 109 output tokens. Full schema/evidence, context 4096, prompt batch 64 and
+output limit 800 are preserved. Cleanup verifies port 4002 free and no loaded model.
+This establishes one real local generation; it does not establish corporate model tiers,
+99% validity or a 500-SKU live workflow. See [local gateway evidence](local-gateway.md).
+
+The new `scripts.cache_benchmark` explicitly measures real MiniLM/Chroma retrieval and
+SQLite lookup with an injected model fixture, in temporary storage. Across **200 warmed
+equivalent-context hits** (100 exact, 100 semantic), total median/p95/maximum latency is
+**2.133 / 2.307 / 2.924ms** on the final source. Every measured request still retrieves current evidence and
+validates citations. This sampled maximum passes <100ms; it does not erase the earlier
+124.92ms contended maximum or guarantee all future hits. The source digest is stable.
+The final artifact is `data/cache_stage_benchmark_final_20261114_result.json`; the
+earlier sample remains `data/cache_stage_benchmark_20261114_result.json`.
+
+Profiling also found cache SQLite handles were left for garbage collection. The cache
+now explicitly closes each connection after commit/rollback, with three lifecycle
+regressions. The new timing sample is not a controlled before/after speedup measurement.
+
+The first real 1-SKU graph probe fails at Data & Context after 48.205s. A native response
+uses all 800 output tokens, while the wrapper reports a safe gateway-call failure; this
+is associated evidence, not proof of an exclusive cause. Its outstanding parallel call
+reveals missing sibling-task ownership. Both concurrent phases now cancel and await
+their peers on failure/cancellation. Separately, actual SDK HTTP-envelope regressions
+verify that output-length errors get one concise structured repair, preserve all schema/
+facts and usage accounting, then fail safely after a second truncated response.
+
+The [expanded objective study](calibration.md) evaluates six fresh 500-SKU cases and
+216 threshold rows. All preserve compliance and forecast profit/margin improvements;
+all fail the unchanged revenue and high-confidence price-accuracy targets. Defaults,
+constraints, baselines and denominators remain unchanged. Human labels and mature
+observed sales are still absent. The browser host remains unavailable, this host has no
+native Windows shell, and the user confirms no external model gateway is available.
+
+## Earlier integration verification
 
 The subsequent operational hardening passes **471 backend tests in 21.20s**, UI
 source/rendering checks, **67 DOM tests in 12.998s**, strict TypeScript/Vite production
@@ -23,10 +171,10 @@ inventory again reports the browser host unavailable; no navigation or applicati
 action occurred. No live generation or business-effectiveness claim is added.
 
 This record separates implemented behavior from measured product effectiveness. The
-running application has no configured gateway or mock-model fallback. Model calls in
-automated tests and the graph benchmark use an explicit typed provider fixture.
-A separate local LiteLLM proxy passes actual grounded startup pre-flight with four
-aliases and real MiniLM inference, but its generation probe fails. The
+application has no mock-model fallback. Model calls in automated tests and the graph
+benchmark use an explicit typed provider fixture. The historical separate local LiteLLM
+proxy passed actual grounded startup pre-flight with four aliases and real MiniLM
+inference, but its November 12 generation probe failed. The
 [local integration record](local-gateway.md) distinguishes catalog readiness from working
 model generation and corporate-tier acceptance. Browser visual QA and Windows startup
 were unavailable. The native

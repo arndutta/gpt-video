@@ -96,6 +96,10 @@ def repair_feedback(error, schema) -> dict:
             for nested in value:
                 properties(nested)
     properties(schema.model_json_schema())
+    if error.__class__.__name__ == "LengthFinishReasonError":
+        return {"validation_errors": [{"loc": [], "type": "structured_output_truncated"}],
+                "instruction": "Return a complete JSON object with concise wording. Keep every required field "
+                               "and the exact supplied citations; do not change deterministic facts."}
     if isinstance(error, ValidationError):
         return {"validation_errors": [{
             "loc": [part if isinstance(part, int) or part in allowed_fields else "[unknown_field]"

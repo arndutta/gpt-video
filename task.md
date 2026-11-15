@@ -151,6 +151,82 @@ live-model/effectiveness/release gates remain open. No backend or pricing policy
   Model/embedding and mature-sales-clock fixtures remain explicit. Browser, native Windows,
   live-generation, effectiveness and final release acceptance remain open.
 
+### Local acceptance follow-up — 2026-11-14 (Asia/Kolkata)
+
+- After the installed Ollama runtime changed from the historical 0.32.1 failure runtime
+  to 0.40.16, one unchanged local structured-generation probe passes in 11.677s with a
+  valid real-RAG citation, 419 input / 109 output tokens and no repair. Cleanup verifies
+  the temporary proxy stopped and no model remained loaded. No external gateway exists.
+- An actual 1-SKU graph attempt then fails at Data & Context after 48.205s; a native
+  response reaches its 800-token output limit and an outstanding sibling exposes a
+  cleanup gap. Both concurrent phases now cancel and await peers before propagating
+  the original failure. SDK length-limit errors now receive the ordinary single safe
+  structured repair and retain token usage, without changing schema, facts or limits.
+- The new portable `scripts.local_acceptance` uses real temporary 500-SKU services,
+  prepared local embeddings, HTTP previews/controls/upload and before/after price/history
+  snapshots. Its macOS run passes in **9.732s**: preview **3.147s**, concurrent health
+  **38.96ms**, upload-to-retrieval **0.255s**; zero price writes, unchanged prices/versions,
+  all owned children stopped, ports free and temporary data removed. It does not certify
+  browser behavior, native Windows, or shell/batch startup wrappers.
+- Cache-stage profiling preserves current retrieval/citation checks on all 200 warmed
+  hits (100 exact, 100 semantic). Final total median/p95/max is **2.133/2.307/2.924ms**;
+  this sampled maximum passes <100ms without replacing the earlier contended failure
+  or claiming a universal guarantee. Cache SQLite connections now close after transactions.
+- A fresh six-case objective study covers both seeds and all three objectives, 500/500
+  modeled SKUs per case and 216 threshold rows, with zero compliance violations. All
+  cases fail the unchanged revenue and high-confidence price-accuracy targets. No policy,
+  baseline, denominator or target changed; human labels and mature outcomes remain absent.
+- Final checks pass **492 backend tests in 22.01s**, **67 DOM tests in 13.069s**, strict
+  TypeScript/Vite build (Vite 1.43s), and the isolated W1–W9 **56-case demonstration in
+  8.178s**. Native acceptance and demonstration record the same stable 146-file Python
+  source digest. The browser host is still unavailable and this machine has no native
+  Windows shell. T26/T32/T33/T46/T47 stay open where their acceptance is unverified.
+
+### Acceptance reconciliation — 2026-11-15 (Asia/Kolkata)
+
+- The final real-model 1-SKU graph remains failed acceptance: repaired Data & Context
+  completes in 175.712s, then the 240.031s overall deadline interrupts Quantitative
+  narration before recommendation/review. There are zero price writes, unchanged
+  Commerce prices/versions, no input truncation or runner kill, and verified owned
+  listener/forwarder/model cleanup. No larger real-model run or further retry followed.
+- SDK-observed usage is 5,308 input / 2,967 output tokens. Native metadata totals
+  8,335 / 3,767 because an already-sent canceled inference finishes during cleanup.
+  The SDK snapshot is not total native consumption; full live reliability remains open.
+- A fresh read-only cleanup check confirms ports 8001/8000/5173/4002 free and no loaded
+  model. The implementation source still matches the stable 146-file digest verified
+  by the 492-test backend suite and 56-case isolated demo. Frontend code is unchanged
+  from its passing 67 tests/build. A new browser inventory again finds the host unavailable.
+- T26/T32/T33/T46/T47 remain open for real browser acceptance, native Windows, full
+  live workflow/performance/statistical validity, human labels/mature outcomes and owner
+  release readiness. No external gateway is available; optional integrations are
+  unconfigured. `data/acceptance_reconciliation_20261115.json` consolidates evidence.
+
+### Bounded workflows and native Windows preparation — 2026-11-15 (Asia/Kolkata)
+
+- Concise initial narration retains all material warnings/uncertainty without echoing
+  input tables. Explicit strategy/validation batches (default 25, range 1–25) retain
+  complete per-SKU facts and verdicts. Validation checks policy versions around every
+  batch and does not activate partial results. Optional complete-envelope byte caps
+  reject intact oversized initial/repair inputs; they are not token-capacity guarantees.
+- The real five-stage **one-SKU functional workflow passes in 284.447s**, reaches a
+  persisted Supervised human-review interrupt, validates its citation and unchanged
+  numerical artifact, and makes zero price writes. Seven real calls include two ordinary
+  repairs. The explicit functional window is 480s; default diagnostic 240s and the PRD's
+  500-SKU/300s target remain unchanged. All native context budgets and cleanup checks pass.
+- The updated 500-SKU typed-model-fixture graph covers all recommendations/citations
+  through 43 bounded model calls in 6.089s. It is not real 500-SKU model latency evidence.
+- Fixed Windows-only dependency installation (`uvloop` marker), SIGBREAK handling and
+  startup metadata SQLite handle closure. The batch-wrapper harness atomically creates
+  its root inside an owned Job Object; descendant cleanup survives wrapper exit and
+  forced cleanup fails acceptance. CI uses pinned official actions and one native
+  command per PowerShell step. The dedicated CI branch is prepared, not published/run.
+- Final checks: **529 backend tests (22.49s)**, **67 DOM cases (13.015s)**, TypeScript/Vite
+  build (1.92s), and **56 isolated W1–W9 cases (10.022s)** pass. Actual macOS service
+  acceptance passes in 11.264s, with 500-SKU preview 3.361s, concurrent health 38.6ms,
+  upload/retrieval 0.465s, unchanged prices and complete cleanup. The stable Python
+  digest covers 157 files. Native Windows, browser QA, real 500-SKU model performance,
+  statistical validity, human/mature-outcome measures and owner release acceptance stay open.
+
 ## How to use this plan
 
 - **M**: must-have for the demo; **S**: should-have; **C**: could-have, following the

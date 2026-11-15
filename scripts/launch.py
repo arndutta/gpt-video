@@ -66,8 +66,11 @@ def main(argv=None):
     def stop(_signum, _frame):
         raise KeyboardInterrupt
 
-    signal.signal(signal.SIGINT, stop)
-    signal.signal(signal.SIGTERM, stop)
+    termination_signals = [signal.SIGINT, signal.SIGTERM]
+    if hasattr(signal, "SIGBREAK"):
+        termination_signals.append(signal.SIGBREAK)
+    for number in termination_signals:
+        signal.signal(number, stop)
     try:
         mode = "grounded" if args.require_gateway else args.mode or os.environ.get("PRICING_STARTUP_MODE", "preview")
         settings, messages = check(mode=mode, require_gateway=args.require_gateway, require_embeddings=args.require_embeddings)
@@ -114,8 +117,8 @@ def main(argv=None):
         return 1
     finally:
         # Finish bounded cleanup even if Ctrl+C is pressed a second time.
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        signal.signal(signal.SIGTERM, signal.SIG_IGN)
+        for number in termination_signals:
+            signal.signal(number, signal.SIG_IGN)
         terminate_children(processes)
     return 0
 
