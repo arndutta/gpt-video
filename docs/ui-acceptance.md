@@ -1,5 +1,14 @@
 # Functional UI acceptance evidence
 
+## Actual browser completion — 2026-11-17
+
+The production build now passes six actual Chromium tests at 1280×900, covering
+both themes, populated review/decisions/citations, scenario plots and stress/save,
+native keyboard/focus behavior and persistent global controls. All checked axe WCAG
+A/AA scans pass; sampled interaction latency peaks at 34.2ms. See the detailed
+[browser record](browser-qa.md). T26/T32/T33 browser gates are closed for that desktop
+scope. The historical DOM-only and host-unavailable records below remain historical.
+
 Date: 2026-11-10. The functional suite renders the actual application components into
 jsdom and drives them with Testing Library user events. Every network request is handled
 by an isolated, explicit test fixture; the suite never connects to the running Commerce

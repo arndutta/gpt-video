@@ -13,18 +13,22 @@ validated execution/revert, saved scenarios, feedback calibration, and an explic
 interval loop. These are local demonstration capabilities, not production authorization
 or evidence of measured business uplift.
 
-Latest verification: **562 backend tests**, **67 DOM tests**, the UI build,
+Latest verification: **562 backend tests**, **67 DOM tests**, **6 actual Chromium tests**, the UI build,
 and the isolated **56-case W1–W9 demonstration** pass. T06 startup checks and T38
 functional acceptance are complete. An isolated local gateway passes real alias and
 embedding pre-flight checks and a real five-stage, one-SKU workflow reaching human review;
 see [local gateway evidence](docs/local-gateway.md). Live 500-SKU performance, statistical
-reliability, actual browser/viewport validation and product
-effectiveness gates remain open; [the feasibility proof](docs/effectiveness-feasibility.md)
+reliability and product-effectiveness gates remain open; [browser acceptance](docs/browser-qa.md)
+now verifies 1280px layout, both themes and keyboard/decision behavior. [The feasibility proof](docs/effectiveness-feasibility.md)
 shows why the unchanged +5% revenue target cannot be met on the current fixtures.
 
 See the [task plan](task.md), [requirements](requirement.md), [design](design.md),
 [implementation decisions](docs/decisions.md), and [operator runbook](docs/operator-runbook.md).
 The source [PRD](prd.md) is unchanged; its formal approval state remains unrecorded.
+The project owner explicitly approved a **limited engineering demo with business KPI
+gates open**; [release readiness](docs/release-readiness.md) records the approved scope,
+failed targets and missing observations. Fresh [SQLite benchmarks](docs/sqlite-benchmarks.md)
+and [native Windows CI evidence](docs/windows-acceptance.md) are tracked separately.
 
 The [modern dashboard redesign](docs/ui-redesign.md) adds a blue/mint visual system,
 collapsible navigation, Ctrl/Cmd+K workspace search, interactive overview stages,
@@ -42,6 +46,11 @@ The real one-SKU functional run reaches Supervised review in 284.447s with uncha
 computed numbers and zero price writes. Earlier 240-second failures remain recorded;
 the 500-SKU timing target is unchanged. A dedicated Windows CI branch/workflow and
 owned Job Object batch-wrapper harness are prepared but require an actual Windows run.
+
+Reproduce browser acceptance with `npm --prefix web run test:browser` after
+`cd web && npx playwright install chromium`. It starts the production UI against
+disposable SQLite data and preserves screenshots, accessibility results and timings
+under ignored `data/browser-qa/`. The normal installed data and gateway are untouched.
 
 ## Run locally
 

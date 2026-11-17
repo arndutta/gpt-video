@@ -1,8 +1,8 @@
 # Implementation Tasks: AI-Driven Dynamic Pricing Engine for Retail
 
-Status: Remaining development is implemented across the grounded workflow, governance,
-execution, feedback, loop, and UI. Local integration verification passes; external
-gateway, browser/Windows, and business-effectiveness acceptance gates remain open.
+Status: The implemented SQLite/RAG engineering demonstration has owner scope approval.
+Desktop Chromium acceptance is complete. Windows acceptance is being rerun after a
+native test-loader fix; full real-model scale and business-effectiveness gates remain open.
 Prepared: 2026-11-08. Source: [prd.md](prd.md), version 1.1, dated 2026-08-07.
 Companion documents: [requirement.md](requirement.md) and [design.md](design.md).
 
@@ -12,6 +12,29 @@ PRD, change its priorities, or authorize its suggested scope cuts. The source do
 linked from the PRD are absent from this repository; only decisions described in the PRD
 are used here. Checkboxes remain open until the entire stated task and its acceptance
 criteria are met; implemented subsets are tracked below and in [README.md](README.md).
+
+### SQLite engineering acceptance — 2026-11-17 (Asia/Kolkata)
+
+- SQLite business/reference data, explicit DDL/DML, migration cleanup, exact SQL exports,
+  and SQLite document/vector/citation retrieval are installed and verified. The static
+  business JSON copies are removed. The committed database migration is `ff89acd`.
+- **562 backend tests**, **67 DOM tests**, and the production TypeScript/Vite build pass.
+  **Six actual Chromium tests** pass at 1280×900 in both themes, with 20 screenshots,
+  clean checked WCAG A/AA scans and 34.2ms maximum sampled interaction latency.
+  [Browser evidence](docs/browser-qa.md) closes T26/T32/T33's desktop gates.
+- Fresh [SQLite benchmarks](docs/sqlite-benchmarks.md) pass numerical/cache/scenario
+  timing, native macOS service/cleanup checks and all **56 W1–W9 fixture cases**.
+  Numerical 500-SKU analysis is 1.494s; Monte Carlo compute 0.245s; warmed cache maximum
+  2.856ms. The 6.390s five-node 500-SKU result uses an explicitly typed model fixture.
+- Windows CI has been pushed and exercised. Native Node exposed a test-loader file-URL
+  defect, fixed in `befd7fc`; the [Windows record](docs/windows-acceptance.md) tracks
+  rerun evidence. A queued/in-progress run is not a passing native result.
+- The project owner/user explicitly approved **a limited engineering demo while keeping
+  business KPI gates open**. [Release readiness](docs/release-readiness.md) records that
+  scope and the fresh 216-row calibration/feasibility study. No PRD target, default,
+  compliance rule or baseline changed. T46's full real-model/observational targets and
+  the full-PRD portion of T47 remain unchecked; synthetic data does not supply real labels
+  or mature future sales.
 
 ### Follow-up development — 2026-11-10
 
@@ -560,14 +583,14 @@ live-model/effectiveness/release gates remain open. No backend or pricing policy
 
 ### T26 — Build review queue, recommendation details, and family ladder [M; details/ladder S]
 
-- [ ] Implement filters/sorts by band, impact, confidence, delta, compliance, and category;
+- [x] Implement filters/sorts by band, impact, confidence, delta, compliance, and category;
   approve/reject/override and eligible bulk actions; expose thresholds and evaluated values.
 - **Done when:** keyboard navigation works at 1280px; bands have labels/shapes; auto-approved
   items remain visible; details expose inputs and citations; product-family ladders show breaks.
 - **Depends on:** T01 UI scaffold, T19, T24, T25. **Requirements:** FR-009, FR-022,
   FR-024, FR-025, FR-026, FR-027, FR-028, FR-070, FR-096, FR-097, FR-118.
 
-- **Implementation evidence (2026-11-09):** Review filters/actions, revision checks, evidence/ladder views, and native keyboard controls are implemented. SSR/safety checks and build pass; actual 1280px keyboard/browser interaction verification remains open.
+- **Implementation evidence (2026-11-09):** Review filters/actions, revision checks, evidence/ladder views, and native keyboard controls are implemented. SSR/safety checks and build pass; actual 1280px keyboard/browser interaction verification was completed by the November 17 Chromium suite; see docs/browser-qa.md.
 
 ## M5 — Commerce execution, feedback, and simulation
 
@@ -625,7 +648,7 @@ live-model/effectiveness/release gates remain open. No backend or pricing policy
 
 ### T32 — Build simulation distribution and comparison views [M; S capabilities follow T31]
 
-- [ ] Add candidate/horizon controls, uncertainty plots, margin-risk display, assumptions,
+- [x] Add candidate/horizon controls, uncertainty plots, margin-risk display, assumptions,
   AI/baseline comparisons, saved-scenario controls, and stress-mode controls.
 - **Done when:** confidence bands are readable in both themes; empty/failed scenarios have
   explicit states; results never appear as unexplained point estimates; single-SKU latency
@@ -633,20 +656,20 @@ live-model/effectiveness/release gates remain open. No backend or pricing policy
 - **Depends on:** T31, T33 theme tokens. **Requirements:** FR-045, FR-046, FR-047,
   FR-048, FR-049, FR-050, FR-106, FR-119; NFR-010.
 
-- **Implementation evidence (2026-11-09):** One/many-SKU simulation, comparisons, saving, stress, and narrative controls are implemented. Numerical scenario latency is measured; both-theme browser visual verification remains open.
+- **Implementation evidence (2026-11-09):** One/many-SKU simulation, comparisons, saving, stress, and narrative controls are implemented. Numerical scenario latency is measured; both-theme browser visual verification was completed by the November 17 Chromium suite; see docs/browser-qa.md.
 
 ## M6 — UI completion
 
 ### T33 — Complete the application shell and persistent global controls [M]
 
-- [ ] Add React Router, Tailwind semantic tokens/CSS variables, Lucide icons, and persisted
+- [x] Add React Router, Tailwind semantic tokens/CSS variables, Lucide icons, and persisted
   light/dark preference. Provide a global header and common pending/error/progress states.
 - **Done when:** there are no UI emojis; header survives route changes; charts and bands
   work in both themes; ordinary interactions target <500ms with progress for long work.
 - **Depends on:** T01, T02. **Requirements:** FR-062, FR-063, FR-064, FR-118,
   FR-119; NFR-009.
 
-- **Implementation evidence (2026-11-09):** The persistent shell, Router, vector icons, theme tokens/preference, and common states are implemented. Browser-rendered contrast and <=500ms UI interaction measurement remain unverified.
+- **Implementation evidence (2026-11-09):** The persistent shell, Router, vector icons, theme tokens/preference, and common states are implemented. Browser-rendered contrast and sampled <=500ms UI interaction measurement passed in the November 17 Chromium suite; see docs/browser-qa.md.
 
 ### T34 — Add runtime gateway settings and LLM monitor [M]
 
@@ -819,7 +842,9 @@ live-model/effectiveness/release gates remain open. No backend or pricing policy
 - [x] Document startup on supported platforms, configuration/model aliases, CA trust and
   bypass controls, secret lifecycle, data generation, thresholds, checkpoints/resume,
   loop start/stop/failure, kill/revert semantics, telemetry fallback, and recovery.
-- [ ] Demonstrate W1–W9: generated run, banded review, what-if, upload grounding, partial
+- [x] Record owner approval for the explicitly scoped engineering demonstration, retaining
+  failed and unobserved business targets. User approval is recorded in the November 17 release packet.
+- [ ] Demonstrate full-PRD W1–W9 acceptance: generated run, banded review, what-if, upload grounding, partial
   push/replay/revert, realized feedback/learning, audit reconstruction, runtime settings,
   and explicit-start continuous loop with failure stop. Show Supervised by default.
 - **Local demonstration evidence (2026-11-11):** The isolated runner covers all nine

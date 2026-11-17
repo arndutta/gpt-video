@@ -1,4 +1,23 @@
-# Development validation — 2026-11-15 (Asia/Kolkata)
+# Development validation
+
+## SQLite engineering demonstration — 2026-11-17 (Asia/Kolkata)
+
+The current implementation passes **562 backend tests (23.79s)**, **67 DOM tests
+(12.226s)**, the strict TypeScript/Vite production build, and **six actual Chromium
+acceptance tests (25.599s)**. Desktop 1280px light/dark layout, keyboard/focus,
+review/override/veto, saved/stressed scenarios and sampled UI latency are verified
+in [browser QA](browser-qa.md). New repeatable browser CI is tracked.
+
+[SQLite benchmarks](sqlite-benchmarks.md) retain fresh 500-SKU numerical, cache,
+native macOS and 56-case W1–W9 results. [Release readiness](release-readiness.md)
+records explicit owner approval for a limited engineering demonstration and preserves
+failed/unobserved full-PRD metrics. Windows CI is being rerun with a portable Node
+preload URL; [native Windows evidence](windows-acceptance.md) remains authoritative.
+
+The earlier records below retain their original dates and storage backends; they do
+not supersede the SQLite migration or the new browser checks.
+
+## Historical validation — 2026-11-15 (Asia/Kolkata)
 
 ## Working real-model functional workflow
 
@@ -360,7 +379,10 @@ aliases/structured support and metadata tracing egress remain environment valida
 
 ## Cost estimate provenance
 
-The packaged `platform_app/llm/model_prices.json` is a small attributed subset of the
+Model rates now live in SQLite `app.db` tables `model_pricing` and
+`model_pricing_provenance`, initialized once from packaged
+`platform_app/sql/model_pricing_ddl.sql` and `model_pricing_dml.sql`.
+The retained dated rate snapshot is a small attributed subset of the
 [official LiteLLM model cost map](https://docs.litellm.ai/docs/proxy/model_cost_map), copied
 from its linked GitHub catalog. It records the retrieval timestamp and SHA-256 of the
 complete source catalog. It covers standard text-token Gemini 2.5 Flash Lite, Flash,
@@ -374,9 +396,10 @@ use the configured input/output fallback rates. The monitor records `litellm_sna
 Provider fees, gateway markup, specialized service tiers and unmodeled modalities are
 not guaranteed by this standard-text estimate.
 
-An isolated wheel build was inspected: `platform_app/llm/model_prices.json` is included
-and exactly matches the source file (SHA-256
-`104307258c76e8e3365d66d949c61a58eb3ea7045ba6f43eef17a4a1c9c1eddf`).
+An isolated installed-wheel check verifies that packaged SQL assets initialize the
+rates and SQLite RAG tables, and that ingestion/retrieval/citations work without
+Chroma imports. The former static rate JSON file has been removed. Committed SQL
+rate edits are observed on the next estimate and survive restart.
 
 ## Initial policy and learning choices
 

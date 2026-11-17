@@ -1,5 +1,52 @@
 # Browser verification record
 
+## Completed Chromium acceptance — 2026-11-17 (Asia/Kolkata)
+
+The user explicitly authorized automated Chromium testing after the CUA browser host
+remained unavailable and native Chrome access was not approved. Playwright 1.65.1
+ran actual Chromium 159.0.8154.6 against the production Vite build at **1280×900**.
+All **six browser tests pass in 25.599s**, with **20 screenshots** and no WCAG A/AA
+violations from axe-core 4.14.0 in the checked views. This is actual browser rendering
+and input, separate from the DOM-only evidence retained below.
+
+```sh
+cd web
+npm ci
+npx playwright install chromium
+npm run test:browser
+```
+
+The test server uses fresh temporary Commerce/app/market/RAG SQLite databases, the
+real local MiniLM model, the production React bundle, and actual governance/scenario
+HTTP routes. Fifteen declared synthetic recommendations cover all bands, blocked
+compliance, pending human decisions and automatic receipts. Confidence/stability
+inputs are explicit UI fixtures; their 95% confidence values are not accuracy evidence.
+Automatic/approve/override tests write only disposable Commerce. The installed user's
+data, approvals, gateway and prices are untouched; the server and temporary data are
+removed after the suite.
+
+| Gate | Browser evidence |
+|---|---|
+| T26 review | Populated 15-row queue, band filters/sorting/reset, three eligible bulk approvals, rejection with written escalation reason, a recalculated override producing revision 2, and blocked compliance with no submit control. Automatic decisions stay visible. |
+| T26 details/keyboard | Enter opens details; Tab/Shift+Tab stay inside the drawer; Escape restores focus. Family ladder, risk thresholds, distributions and a resolvable SQLite citation are visible. |
+| T32 simulation | Single/multiple SKU controls, saved result reload, competitor-undercut stress selected by keyboard, margin-risk display, candidate/current/AI/baseline comparison, and interactive 95% bands in both themes. |
+| T33 shell/theme | Seven routes in both themes without document overflow; persistent header across navigation, keyboard command search, settings/knowledge/loop drawers, and theme persistence across reload. |
+| T33 latency | Click-to-observed-state plus two animation frames: **28.3, 34.2, 29.5, 28.8ms**, maximum **34.2ms**, below 500ms for these sampled interactions. This does not claim a universal latency bound. |
+| Controls | A real backend mode acknowledgment; no halt request before confirmation; cancel sends none; confirm sends exactly one and acknowledges Supervised. |
+
+Full-page screenshots include both themes for Overview, Catalog, Runs, Review,
+Simulation, Audit and Discovery, plus populated scenario plots and the three drawers.
+Representative review and scenario captures were visually inspected for clipping,
+readability and band distinctions. Accessibility captures wait for finite entrance
+and color transitions to settle; interaction timing leaves normal animation enabled.
+
+Machine-readable results are `data/browser-qa/results.json`; screenshots and retained
+failure traces are under `data/browser-qa/artifacts/`. These generated files remain
+ignored. The reproducible suite and dedicated Chromium CI workflow are tracked.
+Historical browser-host failures below remain unchanged. T26/T32/T33's recorded
+desktop browser gates are now closed; real-model scale and business KPIs remain
+separate gates in [release readiness](release-readiness.md).
+
 Date: 2026-11-10. Local application: `http://127.0.0.1:5173`.
 
 ## Browser-host recheck — 2026-11-15 (Asia/Kolkata)
