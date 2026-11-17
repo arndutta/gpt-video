@@ -1,4 +1,4 @@
-"""Runtime grounding through HTTP, with real Chroma and offline deterministic vectors."""
+"""Runtime grounding through HTTP, with real SQLite and offline deterministic vectors."""
 
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -41,7 +41,7 @@ def application(directory, embedder=None, *, local_model=False):
     transport = httpx.MockTransport(lambda request: httpx.Response(
         200, json={"status": "ok", "seeded": True}))
     factory = None if local_model else lambda config: RagStore(
-        config.data_dir / "chroma", embedder or Embedder(),
+        config.data_dir / "rag.db", embedder or Embedder(),
         chunk_size=config.rag_chunk_size, chunk_overlap=config.rag_chunk_overlap)
     app = create_app(settings, commerce_transport=transport, rag_factory=factory)
     with TestClient(app) as client:

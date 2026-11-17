@@ -113,25 +113,25 @@ def test_local_prevents_silent_truncation_before_inference(tmp_path, monkeypatch
 
 
 def test_local_disables_vendor_telemetry_before_constructing_runtime(tmp_path, monkeypatch):
-    from chromadb.utils.embedding_functions import onnx_mini_lm_l6_v2 as sdk
-    from platform_app.rag.embedding_download import ARCHIVE_SHA256
     events = []
 
     def disable():
         assert os.environ["ORT_DISABLE_TELEMETRY"] == "1"
         events.append("disabled")
 
-    class RuntimeBoundary:
-        _MODEL_SHA256 = ARCHIVE_SHA256
-
-        def __init__(self, **kwargs):
-            assert events == ["disabled"], "Telemetry must be disabled before runtime construction"
+    def runtime(path, **kwargs):
+        assert events == ["disabled"], "Telemetry must be disabled before runtime construction"
+        assert path.endswith("onnx/model.onnx")
+        assert kwargs["providers"] == ["CPUExecutionProvider"]
+        return SimpleNamespace()
 
     monkeypatch.setenv("ORT_DISABLE_TELEMETRY", "0")
-    monkeypatch.setitem(sys.modules, "onnxruntime", SimpleNamespace(disable_telemetry_events=disable))
-    monkeypatch.setattr(sdk, "ONNXMiniLM_L6_V2", RuntimeBoundary)
+    monkeypatch.setitem(sys.modules, "onnxruntime", SimpleNamespace(
+        disable_telemetry_events=disable, SessionOptions=SimpleNamespace,
+        GraphOptimizationLevel=SimpleNamespace(ORT_ENABLE_ALL=1), InferenceSession=runtime))
     embedder = LocalMiniLM(tmp_path)
-    assert embedder._engine.DOWNLOAD_PATH == embedder.root
+    monkeypatch.setattr(embedder, "check", lambda: {"available": True})
+    assert callable(embedder._engine)
 
 
 def archive_bytes(names=None):

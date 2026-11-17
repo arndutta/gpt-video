@@ -13,6 +13,7 @@ import httpx
 import numpy as np
 
 from commerce.app import create_app
+from commerce.evaluation import read_evaluation_truth
 from commerce.seed import seed_database
 from platform_app.commerce_client import CommerceClient, read_competitors
 from platform_app.governance.compliance import validate_price
@@ -157,7 +158,7 @@ async def study(args):
             commerce = CommerceClient("http://feasibility-commerce", httpx.ASGITransport(app=upstream))
             async with upstream.router.lifespan_context(upstream):
                 context = await commerce.context()
-            truth = json.loads((directory / "evaluation_truth.json").read_text())
+            truth = read_evaluation_truth(directory / "commerce.db")
             results.append(await asyncio.to_thread(snapshot, context, read_competitors(directory), truth,
                                                     seed, args.iterations, args.horizon))
     return {"timestamp": datetime.now(timezone.utc).isoformat(), "seeds": args.seeds, "sku_count_per_seed": args.skus,

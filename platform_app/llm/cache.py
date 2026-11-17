@@ -5,6 +5,8 @@ instructions share the conservative semantic tier, with identical facts and evid
 No prompt, evidence body, credentials, or raw provider response is persisted.
 """
 
+from platform_app.database import sql
+
 from contextlib import contextmanager
 import hashlib
 import json
@@ -38,16 +40,7 @@ class ResponseCache:
         self.path = data_dir / "llm_cache.db"
         self.lock = threading.Lock()
         with self.connection() as db:
-            db.executescript("""
-                CREATE TABLE IF NOT EXISTS llm_responses (
-                    exact_key TEXT PRIMARY KEY, namespace TEXT NOT NULL,
-                    equivalence_hash TEXT NOT NULL, embedding TEXT NOT NULL,
-                    response TEXT NOT NULL, created_at REAL NOT NULL
-                );
-                CREATE INDEX IF NOT EXISTS llm_semantic ON llm_responses(namespace,equivalence_hash);
-                CREATE TABLE IF NOT EXISTS llm_cache_stats (name TEXT PRIMARY KEY,value INTEGER NOT NULL);
-                INSERT OR IGNORE INTO llm_cache_stats VALUES('exact_hits',0),('semantic_hits',0),('misses',0);
-            """)
+            db.executescript(sql("cache_ddl.sql") + sql("cache_dml.sql"))
 
     @contextmanager
     def connection(self):

@@ -3,6 +3,7 @@
 import queue
 from collections import Counter
 from collections.abc import Mapping
+from contextlib import closing
 import sqlite3
 import threading
 import time
@@ -10,8 +11,9 @@ import time
 from langchain_core.callbacks import AsyncCallbackHandler
 
 from platform_app.config import tls_context
+from platform_app.database import sql
 from .safety import redact
-from .pricing import catalog, estimate_cost
+from .pricing import catalog, estimate_cost, initialize_pricing
 
 
 def usage(raw) -> tuple[int, int]:
@@ -58,10 +60,9 @@ class CallMonitor:
         self.cost_sources = Counter()
         self.available, self.dropped, self.langfuse = True, 0, None
         try:
-            with sqlite3.connect(self.path, timeout=.2) as db:
-                db.execute("CREATE TABLE IF NOT EXISTS llm_usage (id INTEGER PRIMARY KEY AUTOINCREMENT,"
-                           "timestamp REAL,run_id TEXT,agent TEXT,model TEXT,status TEXT,"
-                           "tokens_in INTEGER,tokens_out INTEGER,cost_usd REAL,latency_ms REAL)")
+            initialize_pricing(data_dir)
+            with closing(sqlite3.connect(self.path, timeout=.2)) as db, db:
+                db.executescript(sql("usage_ddl.sql"))
                 columns = {row[1] for row in db.execute("PRAGMA table_info(llm_usage)")}
                 if "pricing_source" not in columns:
                     db.execute("ALTER TABLE llm_usage ADD COLUMN pricing_source TEXT NOT NULL DEFAULT 'legacy_configured_fallback_rates'")
@@ -88,7 +89,8 @@ class CallMonitor:
                        if (value := getattr(settings, name, None))])
         tokens_in, tokens_out = usage(raw)
         try:
-            priced = estimate_cost(settings, role, model, raw, tokens_in, tokens_out)
+            priced = estimate_cost(settings, role, model, raw, tokens_in, tokens_out,
+                                   data_dir=self.path.parent)
         except Exception:
             priced = {"cost_usd": (tokens_in * settings.llm_input_cost_per_million
                                   + tokens_out * settings.llm_output_cost_per_million) / 1_000_000,
@@ -149,7 +151,7 @@ class CallMonitor:
                         self.available = False
                 return
             try:
-                with sqlite3.connect(self.path, timeout=.2) as db:
+                with closing(sqlite3.connect(self.path, timeout=.2)) as db, db:
                     db.execute("INSERT INTO llm_usage(timestamp,run_id,agent,model,status,tokens_in,tokens_out,"
                                "cost_usd,latency_ms,pricing_source,pricing_model) VALUES(:timestamp,:run_id,:agent,:model,:status,:tokens_in,"
                                ":tokens_out,:cost_usd,:latency_ms,:pricing_source,:pricing_model)", item)
@@ -163,7 +165,7 @@ class CallMonitor:
 
     def snapshot(self):
         try:
-            provenance = catalog()["provenance"]
+            provenance = catalog(self.path.parent)["provenance"]
         except Exception:
             provenance = {"status": "unavailable"}
         with self.lock:

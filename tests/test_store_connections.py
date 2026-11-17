@@ -15,10 +15,10 @@ def test_startup_closes_every_database_connection_on_success_and_metadata_failur
     class Connection(sqlite3.Connection):
         was_closed = False
 
-        def execute(self, sql, *args, **kwargs):
+        def executescript(self, sql, *args, **kwargs):
             if fail_metadata and "CREATE TABLE IF NOT EXISTS cache_metadata" in sql:
                 raise OSError("Explicit metadata initialization failure")
-            return super().execute(sql, *args, **kwargs)
+            return super().executescript(sql, *args, **kwargs)
 
         def close(self):
             self.was_closed = True

@@ -1,0 +1,1 @@
+INSERT OR IGNORE INTO schema_version VALUES(1);

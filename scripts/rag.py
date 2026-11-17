@@ -17,6 +17,7 @@ def parser() -> argparse.ArgumentParser:
     sub = result.add_subparsers(dest="command", required=True)
     sub.add_parser("check", help="Check local availability offline; explicitly selected gateway uses a probe")
     sub.add_parser("prepare", help="Download and verify the local embedding model once")
+    sub.add_parser("migrate", help="Move legacy Chroma evidence into SQLite without reembedding; stop the app first")
     ingest = sub.add_parser("ingest", help="Ingest a UTF-8 .txt or .md document")
     ingest.add_argument("file", type=Path)
     ingest.add_argument("--source-id", required=True, help="Stable identifier used across document versions")
@@ -41,6 +42,11 @@ def main(argv=None) -> int:
         settings = Settings.from_environment()
         if args.data_dir:
             settings = settings.model_copy(update={"data_dir": args.data_dir})
+        if args.command == "migrate":
+            from platform_app.rag.migration import migrate_chroma
+
+            print(json.dumps(migrate_chroma(settings.data_dir), indent=2))
+            return 0
         embedder = create_embedder(settings)
         if args.command == "check":
             report = embedder.check()

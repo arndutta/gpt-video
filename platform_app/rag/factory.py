@@ -20,7 +20,12 @@ def create_embedder(settings: Settings):
 
 def create_store(settings: Settings):
     from platform_app.rag.store import RagStore
+    from platform_app.rag.models import RagError
+    from platform_app.rag.migration import requires_migration
 
-    return RagStore(settings.data_dir / "chroma", create_embedder(settings),
+    if requires_migration(settings.data_dir):
+        raise RagError("Migrate the existing grounding index with python -m scripts.rag migrate "
+                       "or python -m scripts.database before using SQLite retrieval.")
+    return RagStore(settings.data_dir / "rag.db", create_embedder(settings),
                     chunk_size=settings.rag_chunk_size, chunk_overlap=settings.rag_chunk_overlap,
                     role_breadths=settings.retrieval_breadths)

@@ -13,18 +13,18 @@ from platform_app.telemetry import Telemetry
 from test_grounded_llm import Explanation, GroundingFixture, ProviderFixture, SECRET
 
 
-def test_litellm_snapshot_provenance_and_provider_model_resolution():
-    provenance = catalog()["provenance"]
+def test_litellm_snapshot_provenance_and_provider_model_resolution(tmp_path):
+    provenance = catalog(tmp_path)["provenance"]
     assert provenance["source"].startswith("https://raw.githubusercontent.com/BerriAI/litellm/")
     assert len(provenance["source_sha256"]) == 64 and provenance["retrieved_at"]
     raw = SimpleNamespace(response_metadata={"model_name": "gemini-2.5-flash"})
-    priced = estimate_cost(Settings(), "analyst", "corporate-alias", raw, 100_000, 20_000)
+    priced = estimate_cost(Settings(data_dir=tmp_path), "analyst", "corporate-alias", raw, 100_000, 20_000)
     assert priced["pricing_source"] == "litellm_snapshot" and priced["pricing_model"] == "gemini-2.5-flash"
     assert priced["cost_usd"] == pytest.approx(.08)
 
 
-def test_explicit_role_pricing_identifier_and_long_context_rates():
-    settings = Settings(pricing_model_strategist="gemini/gemini-2.5-pro")
+def test_explicit_role_pricing_identifier_and_long_context_rates(tmp_path):
+    settings = Settings(data_dir=tmp_path, pricing_model_strategist="gemini/gemini-2.5-pro")
     raw = SimpleNamespace(response_metadata={"model_name": "gpt-4o-mini"})
     short = estimate_cost(settings, "strategist", "corporate-alias", raw, 1000, 1000)
     assert short["pricing_model"] == "gemini/gemini-2.5-pro" and short["cost_usd"] == pytest.approx(.01125)
@@ -32,8 +32,9 @@ def test_explicit_role_pricing_identifier_and_long_context_rates():
     assert long["cost_usd"] == pytest.approx(2.725)
 
 
-def test_unknown_identifier_uses_explicit_configured_fallback_and_env_mapping(monkeypatch):
+def test_unknown_identifier_uses_explicit_configured_fallback_and_env_mapping(monkeypatch, tmp_path):
     monkeypatch.setenv("LLM_PRICING_MODEL_ANALYST", "unknown-provider-model")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
     settings = Settings.from_environment()
     settings.llm_input_cost_per_million, settings.llm_output_cost_per_million = .3, 1.2
     priced = estimate_cost(settings, "analyst", "unknown-alias", None, 1000, 1000)

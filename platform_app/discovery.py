@@ -1,5 +1,7 @@
 """Read-only grounded questions and bounded A2A 0.3 JSON-RPC interoperability."""
 
+from platform_app.database import sql
+
 import hashlib
 import json
 from uuid import uuid4
@@ -54,7 +56,7 @@ def card():
 
 def init_discovery(store):
     with store.connection() as db:
-        db.execute("CREATE TABLE IF NOT EXISTS a2a_messages(message_id TEXT PRIMARY KEY,digest TEXT,run_id TEXT)")
+        db.executescript(sql("discovery_ddl.sql"))
 
 
 def task(run):

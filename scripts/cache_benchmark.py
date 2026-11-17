@@ -95,7 +95,7 @@ async def benchmark(samples, model_cache):
             calls = {key: after[key] - before[key] for key in ("exact_hits", "semantic_hits", "misses", "hits")}
             source_after = source_digest()
             return {"status": "measured", "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "mode": "real_local_MiniLM_Chroma_and_SQLite_with_explicit_model_fixture",
+                    "mode": "real_local_MiniLM_SQLite_RAG_with_explicit_model_fixture",
                     "hardware": {"platform": platform.platform(), "python": platform.python_version()},
                     "workload": {"samples": samples, "warmup_calls": len(queries),
                                  "repeated_equivalent_context": True, "concurrent_load": "not imposed by this runner"},

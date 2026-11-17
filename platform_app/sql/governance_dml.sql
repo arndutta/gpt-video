@@ -1,0 +1,2 @@
+-- Initial policy is inserted only on an empty database; configured policies persist.
+INSERT OR IGNORE INTO governance_control VALUES (1, 'supervised', 1, 1, '{"anomaly_z_threshold":4.0,"auto_delta_pct":5.0,"bulk_confidence_threshold":0.8,"confidence_threshold":0.8,"damping_fraction":0.35,"hold_seconds":60,"margin_proximity_buffer":0.03,"market_gap_limit_pct":30.0,"maximum_change_pct":null,"minimum_change_seconds":0,"minimum_margin_pct":null,"minimum_sample":60,"oscillation_window":8,"reversals_threshold":2,"rounding_increment":null,"volatility_limit":0.35}');

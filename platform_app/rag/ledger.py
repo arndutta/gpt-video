@@ -1,5 +1,7 @@
 """Immutable document manifests and atomic publication of active evidence versions."""
 
+from platform_app.database import sql
+
 from contextlib import contextmanager
 from datetime import datetime, timezone
 import json
@@ -14,22 +16,7 @@ class Manifest:
         self.path = path
         identity = json.dumps({"model_id": model_id, "dimensions": dimensions}, sort_keys=True)
         with self.connection() as db:
-            db.executescript("""
-                CREATE TABLE IF NOT EXISTS embedding_identity (id INTEGER PRIMARY KEY, identity TEXT NOT NULL);
-                CREATE TABLE IF NOT EXISTS corpus (id INTEGER PRIMARY KEY, revision INTEGER NOT NULL);
-                INSERT OR IGNORE INTO corpus VALUES (1, 0);
-                CREATE TABLE IF NOT EXISTS versions (
-                    collection TEXT NOT NULL, source_id TEXT NOT NULL, version TEXT NOT NULL,
-                    document_key TEXT NOT NULL UNIQUE, signature TEXT NOT NULL,
-                    chunk_count INTEGER NOT NULL, ready INTEGER NOT NULL DEFAULT 0,
-                    indexed_at TEXT, PRIMARY KEY(collection, source_id, version)
-                );
-                CREATE TABLE IF NOT EXISTS active_documents (
-                    collection TEXT NOT NULL, source_id TEXT NOT NULL, version TEXT NOT NULL,
-                    PRIMARY KEY(collection, source_id),
-                    FOREIGN KEY(collection, source_id, version) REFERENCES versions(collection, source_id, version)
-                );
-            """)
+            db.executescript(sql("manifest_ddl.sql") + sql("manifest_dml.sql"))
             db.execute("BEGIN IMMEDIATE")
             existing = db.execute("SELECT identity FROM embedding_identity WHERE id=1").fetchone()
             if existing and existing[0] != identity:

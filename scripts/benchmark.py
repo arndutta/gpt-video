@@ -19,6 +19,7 @@ import numpy as np
 from pydantic import BaseModel, Field
 
 from commerce.app import create_app as create_commerce
+from commerce.evaluation import read_evaluation_truth
 from commerce.seed import seed_database
 from platform_app.commerce_client import CommerceClient, read_competitors
 from platform_app.config import Settings
@@ -168,7 +169,7 @@ async def benchmark(args):
         async with upstream.router.lifespan_context(upstream):
             context = await client.context(category=args.category)
             competitors = read_competitors(directory)
-            truth = json.loads((directory / "evaluation_truth.json").read_text())
+            truth = read_evaluation_truth(directory / "commerce.db")
             mc_seconds, heartbeat, last, running = 0., [], time.perf_counter(), True
             original = analysis_module.sample_forecasts
             def timed(*positional, **keywords):

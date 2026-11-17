@@ -57,7 +57,7 @@ def check(*, mode=None, require_gateway=False, skip_ports=False, require_embeddi
     require_gateway = require_gateway or mode == "grounded"
     require_embeddings = require_embeddings or mode == "grounded"
     for dependency in ["fastapi", "pydantic", "httpx", "numpy", "scipy", "uvicorn", "structlog",
-                       "chromadb", "onnxruntime", "tokenizers", "python-multipart", "langchain",
+                       "onnxruntime", "tokenizers", "python-multipart", "langchain",
                        "langchain-openai", "langgraph", "langgraph-checkpoint-sqlite"]:
         try:
             version(dependency)
@@ -66,7 +66,7 @@ def check(*, mode=None, require_gateway=False, skip_ports=False, require_embeddi
     _, _, node_version = node_runtime()
     if not (ROOT / "web/node_modules/vite/bin/vite.js").exists():
         raise RuntimeError("UI dependencies are missing. Run npm ci in web/ using a supported Node runtime.")
-    for directory in [settings.data_dir, settings.data_dir / "chroma"]:
+    for directory in [settings.data_dir]:
         try:
             directory.mkdir(parents=True, exist_ok=True)
             with tempfile.TemporaryFile(dir=directory) as probe:

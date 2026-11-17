@@ -9,13 +9,12 @@ description = "Local retail pricing services and deterministic quantitative prev
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.116,<1",
-  "uvicorn>=0.34,<1",
+  "uvicorn[standard]>=0.34,<1",
   "httpx>=0.28,<0.29",
   "pydantic>=2.11,<3",
   "numpy>=1.26,<3",
   "scipy>=1.11,<2",
   "structlog>=25,<26",
-  "chromadb>=1.5.9,<2",
   "onnxruntime>=1.20,<2",
   "tokenizers>=0.21,<1",
   "python-multipart>=0.0.20,<1",
@@ -28,12 +27,14 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<9", "pytest-asyncio>=0.25,<2"]
+legacy-rag = ["chromadb>=1.5.9,<2"]
 
 [tool.setuptools.packages.find]
 include = ["commerce*", "platform_app*"]
 
 [tool.setuptools.package-data]
-"platform_app.llm" = ["model_prices.json"]
+"commerce" = ["sql/*.sql"]
+"platform_app" = ["sql/*.sql"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

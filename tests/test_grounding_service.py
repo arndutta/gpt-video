@@ -1,4 +1,4 @@
-"""Runtime grounding uses real Chroma publication and deterministic offline test vectors."""
+"""Runtime grounding uses real SQLite publication and deterministic offline test vectors."""
 
 import asyncio
 import inspect
@@ -44,7 +44,7 @@ def setup_service(tmp_path, embedder=None):
     opened = []
 
     def factory(current):
-        rag = RagStore(current.data_dir / "chroma", engine, chunk_size=90, chunk_overlap=15)
+        rag = RagStore(current.data_dir / "rag.db", engine, chunk_size=90, chunk_overlap=15)
         opened.append(rag)
         return rag
 
@@ -65,7 +65,7 @@ async def wait_job(service, job_id):
 async def test_upload_is_retrievable_immediately_and_statistics_match_published_version(tmp_path):
     service, _, opened, store = setup_service(tmp_path)
     try:
-        assert not opened  # Application startup has not opened Chroma or loaded a model.
+        assert not opened  # Application startup has not opened SQLite or loaded a model.
         queued = await asyncio.to_thread(service.submit, document(version="v1"), "policy.md")
         assert queued["status"] == "queued" and queued["result"] is None
         ready = await wait_job(service, queued["id"])
@@ -95,7 +95,7 @@ async def test_upload_is_retrievable_immediately_and_statistics_match_published_
 
 @pytest.mark.asyncio
 async def test_partial_replacement_failure_is_visible_and_preserves_active_context(tmp_path, monkeypatch):
-    from chromadb.api.models.Collection import Collection
+    from platform_app.rag.sqlite_index import SQLiteCollection as Collection
 
     service, _, _, _ = setup_service(tmp_path)
     try:
@@ -222,7 +222,7 @@ async def test_gateway_stats_never_probe_and_key_changes_replace_cached_store(tm
 
     def factory(settings):
         created_keys.append(settings.api_key.get_secret_value())
-        rag = RagStore(settings.data_dir / "chroma", embedder)
+        rag = RagStore(settings.data_dir / "rag.db", embedder)
         opened.append(rag)
         return rag
 

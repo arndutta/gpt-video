@@ -1,5 +1,7 @@
 """Platform-owned preview runs and append-only audit events, never live business data."""
 
+from platform_app.database import sql
+
 import json
 import sqlite3
 from contextlib import closing, contextmanager
@@ -19,24 +21,7 @@ class Store:
         self.path = data_dir / "app.db"
         data_dir.mkdir(parents=True, exist_ok=True)
         with self.connection() as db:
-            db.executescript("""
-                CREATE TABLE IF NOT EXISTS schema_version(version INTEGER PRIMARY KEY);
-                INSERT OR IGNORE INTO schema_version VALUES(1);
-                CREATE TABLE IF NOT EXISTS runs (
-                    id TEXT PRIMARY KEY, status TEXT NOT NULL, stage TEXT NOT NULL,
-                    created_at TEXT NOT NULL, completed_at TEXT,
-                    request TEXT NOT NULL, result TEXT, error TEXT
-                );
-                CREATE TABLE IF NOT EXISTS audit (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT NOT NULL,
-                    actor TEXT NOT NULL, action TEXT NOT NULL, run_id TEXT, detail TEXT NOT NULL
-                );
-                CREATE TRIGGER IF NOT EXISTS audit_no_update BEFORE UPDATE ON audit
-                BEGIN SELECT RAISE(ABORT, 'Audit events are append-only'); END;
-                CREATE TRIGGER IF NOT EXISTS audit_no_delete BEFORE DELETE ON audit
-                BEGIN SELECT RAISE(ABORT, 'Audit events are append-only'); END;
-                CREATE INDEX IF NOT EXISTS audit_run ON audit(run_id,id);
-            """)
+            db.executescript(sql("app_ddl.sql") + sql("app_dml.sql"))
             interrupted = db.execute("SELECT id FROM runs WHERE status IN ('queued','running')").fetchall()
             db.execute("UPDATE runs SET status='interrupted',stage='interrupted',"
                        "error='Application stopped. Start a new preview to refresh input data.' "
@@ -46,8 +31,7 @@ class Store:
         with closing(sqlite3.connect(data_dir / "llm_cache.db")) as db:
             with db:
                 db.execute("PRAGMA journal_mode=WAL")
-                db.execute("CREATE TABLE IF NOT EXISTS cache_metadata (version INTEGER PRIMARY KEY)")
-                db.execute("INSERT OR IGNORE INTO cache_metadata VALUES(1)")
+                db.executescript(sql("cache_ddl.sql") + sql("cache_dml.sql"))
 
     @contextmanager
     def connection(self):

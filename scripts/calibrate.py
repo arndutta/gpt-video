@@ -13,6 +13,7 @@ import time
 import httpx
 
 from commerce.app import create_app as create_commerce
+from commerce.evaluation import read_evaluation_truth
 from commerce.seed import seed_database
 from platform_app.commerce_client import CommerceClient, read_competitors
 from platform_app.governance.bands import assign_band
@@ -95,7 +96,7 @@ async def study(args):
             async with upstream.router.lifespan_context(upstream):
                 context = await commerce.context(category=args.category)
                 competitors = read_competitors(directory)
-                truth = json.loads((directory / "evaluation_truth.json").read_text())
+                truth = read_evaluation_truth(directory / "commerce.db")
                 for objective in args.objectives:
                     started = time.perf_counter()
                     report = await asyncio.to_thread(analyze_catalog, context["catalog"], context["sales"],

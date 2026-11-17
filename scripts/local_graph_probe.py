@@ -9,14 +9,14 @@ one-SKU probe never establishes the 500-SKU performance requirement.
 
 import argparse
 import asyncio
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 import re
-import shutil
 import socket
+import sqlite3
 import tempfile
 import threading
 import time
@@ -172,7 +172,9 @@ async def graph_probe(gateway, directory, deadline):
     as_of = datetime.now(timezone.utc).date()
     await asyncio.to_thread(seed_database, commerce_dir / "commerce.db", sku_count=500, days=180,
                             seed=42, as_of=as_of, data_dir=commerce_dir, categories=("Beverages",))
-    shutil.copyfile(commerce_dir / "competitor_feed.json", platform_dir / "competitor_feed.json")
+    with closing(sqlite3.connect(commerce_dir / "market.db")) as source:
+        with closing(sqlite3.connect(platform_dir / "market.db")) as target:
+            source.backup(target)
     upstream = create_commerce(commerce_dir / "commerce.db")
     settings = gateway.settings(platform_dir).model_copy(update={
         "commerce_url": "http://local-graph-commerce", "startup_mode": "grounded"})

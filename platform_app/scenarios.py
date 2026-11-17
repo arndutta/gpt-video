@@ -1,5 +1,7 @@
 """One/many-SKU what-if requests, shared-engine distributions and saved evidence."""
 
+from platform_app.database import sql
+
 import asyncio
 import json
 from typing import Literal
@@ -129,7 +131,7 @@ async def evaluate(payload, state):
 
 def init_scenarios(store):
     with store.connection() as db:
-        db.execute("CREATE TABLE IF NOT EXISTS saved_scenarios(id TEXT PRIMARY KEY,name TEXT,created_at TEXT,request TEXT,result TEXT)")
+        db.executescript(sql("scenarios_ddl.sql"))
 
 
 @router.post("/batch")

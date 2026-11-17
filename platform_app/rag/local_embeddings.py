@@ -34,7 +34,7 @@ class LocalMiniLM:
                      for path in paths for stat in [path.stat()])
 
     def check(self) -> dict:
-        dependencies = all(find_spec(name) is not None for name in ("chromadb", "onnxruntime", "tokenizers"))
+        dependencies = all(find_spec(name) is not None for name in ("numpy", "onnxruntime", "tokenizers"))
         ready = False
         if dependencies:
             try:
@@ -49,7 +49,7 @@ class LocalMiniLM:
                 "Prepare the local embedding model and install RAG dependencies before ingestion/retrieval."}
 
     def prepare(self) -> dict:
-        if not all(find_spec(name) is not None for name in ("chromadb", "onnxruntime", "tokenizers")):
+        if not all(find_spec(name) is not None for name in ("numpy", "onnxruntime", "tokenizers")):
             raise EmbeddingUnavailable("RAG dependencies are missing. Install the project's locked dependencies first.")
         prepare_cache(self.cache_dir, self.settings)
         # Validate the actual runtime, not only successful file download.
@@ -81,18 +81,35 @@ class LocalMiniLM:
         os.environ["ORT_DISABLE_TELEMETRY"] = "1"
         import onnxruntime
         onnxruntime.disable_telemetry_events()
-        from chromadb.utils.embedding_functions.onnx_mini_lm_l6_v2 import ONNXMiniLM_L6_V2
+        import numpy as np
 
-        class OfflineMiniLM(ONNXMiniLM_L6_V2):
-            def _download_model_if_not_exists(inner):
-                # Never invoke the SDK's downloader from an inference call.
-                self._require_ready()
+        self._require_ready()
+        options = onnxruntime.SessionOptions()
+        options.log_severity_level = 3
+        options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_ALL
+        session = onnxruntime.InferenceSession(str(self.root / "onnx" / "model.onnx"),
+                                             providers=["CPUExecutionProvider"], sess_options=options)
 
-        if ONNXMiniLM_L6_V2._MODEL_SHA256 != ARCHIVE_SHA256:
-            raise EmbeddingUnavailable("Installed embedding SDK uses an unexpected model revision.")
-        engine = OfflineMiniLM(preferred_providers=["CPUExecutionProvider"])
-        engine.DOWNLOAD_PATH = self.root
-        return engine
+        def encode(texts):
+            result = []
+            for offset in range(0, len(texts), 32):
+                encodings = self._tokenizer.encode_batch(texts[offset:offset + 32])
+                if any(len(item.ids) > self.max_tokens for item in encodings):
+                    raise EmbeddingUnavailable("Text exceeds the local model's 256-token limit; text was not truncated.")
+                # Keep the existing model's padding and pooling so migrated vectors
+                # remain in the same embedding space and revision.
+                ids = np.array([item.ids + [0] * (self.max_tokens - len(item.ids)) for item in encodings], dtype=np.int64)
+                mask = np.array([item.attention_mask + [0] * (self.max_tokens - len(item.ids))
+                                 for item in encodings], dtype=np.int64)
+                hidden = session.run(None, {"input_ids": ids, "attention_mask": mask,
+                                            "token_type_ids": np.zeros_like(ids)})[0]
+                expanded = np.broadcast_to(mask[..., None], hidden.shape)
+                pooled = (hidden * expanded).sum(axis=1) / np.maximum(expanded.sum(axis=1), 1e-9)
+                norms = np.linalg.norm(pooled, axis=1, keepdims=True)
+                result.extend((pooled / np.maximum(norms, 1e-12)).astype(np.float32).tolist())
+            return result
+
+        return encode
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         validate_texts(texts)

@@ -70,7 +70,7 @@ def workbench(directory, *, seed=True):
                         api_key="fixture-memory-only", model_router="router", model_narrator="narrator",
                         model_analyst="analyst", model_strategist="strategist")
     app = create_app(settings, commerce_transport=httpx.ASGITransport(app=upstream),
-                     rag_factory=lambda config: RagStore(config.data_dir / "chroma", Embedder()),
+                     rag_factory=lambda config: RagStore(config.data_dir / "rag.db", Embedder()),
                      llm_provider_factory=lambda _settings, role: provider.for_role(role))
     with TestClient(app) as client:
         yield client, app, provider

@@ -2,6 +2,7 @@ from datetime import date
 from decimal import Decimal
 from concurrent.futures import ThreadPoolExecutor
 import json
+import sqlite3
 
 from fastapi.testclient import TestClient
 import pytest
@@ -9,6 +10,8 @@ import pytest
 from commerce.app import create_app
 from commerce.seed import generate, money, seed_database
 from commerce.storage import connect
+from commerce.market import initialize_market, replace_quotes
+from platform_app.commerce_client import read_competitors
 
 
 @pytest.fixture
@@ -158,18 +161,53 @@ def test_seed_reproducibility_ground_truth_and_explicit_reset(tmp_path):
     assert one != generate(6, 30, 43, date(2026, 11, 8))
     path = tmp_path / "commerce.db"
     seed_database(path, sku_count=6, days=30, data_dir=tmp_path)
-    feed = json.loads((tmp_path / "competitor_feed.json").read_text())
+    feed = read_competitors(tmp_path)
     assert len(feed) == 12 and set(feed[0]) == {"sku", "competitor", "price", "observed_at"}
-    truth = json.loads((tmp_path / "evaluation_truth.json").read_text())
-    assert len(truth) == 6 and all(row["elasticity"] < 0 for row in truth.values())
+    with connect(path) as connection:
+        truth = connection.execute("SELECT elasticity FROM evaluation_truth").fetchall()
+    assert len(truth) == 6 and all(row["elasticity"] < 0 for row in truth)
+    assert not (tmp_path / "competitor_feed.json").exists()
+    assert not (tmp_path / "evaluation_truth.json").exists()
     with pytest.raises(ValueError, match="already contains"):
         seed_database(path, sku_count=6, days=30, data_dir=tmp_path)
     seed_database(path, sku_count=6, days=30, data_dir=tmp_path, reset=True)
     with connect(path) as connection:
         assert connection.execute("SELECT COUNT(*) FROM sales").fetchone()[0] == 180
+    assert read_competitors(tmp_path) == feed
 
 
 def test_empty_database_is_initialized_without_silent_seeding(tmp_path):
     with TestClient(create_app(tmp_path / "empty.db")) as client:
         assert client.get("/health").json()["seeded"] is False
         assert client.get("/catalog").json()["items"] == []
+
+
+@pytest.mark.parametrize("envelope", [False, True])
+def test_legacy_market_migration_is_once_only_and_preserves_database_edits(tmp_path, envelope):
+    quote = {"sku": "SKU-1", "competitor": "Market", "price": "10.00", "observed_at": "2026-11-08"}
+    legacy = tmp_path / "competitor_feed.json"
+    legacy.write_text(json.dumps({"items": [quote]} if envelope else [quote]))
+    path = initialize_market(tmp_path)
+    assert read_competitors(tmp_path) == [quote]
+    with sqlite3.connect(path) as db:
+        db.execute("UPDATE competitor_quotes SET price='11.00'")
+    legacy.write_text("this obsolete input must not be read again")
+    initialize_market(tmp_path)
+    assert read_competitors(tmp_path) == [{**quote, "price": "11.00"}]
+    with sqlite3.connect(path) as db:
+        db.execute("DELETE FROM competitor_quotes")
+    initialize_market(tmp_path)
+    assert read_competitors(tmp_path) == []
+
+
+def test_market_replacement_rolls_back_and_reader_never_uses_static_json(tmp_path):
+    assert read_competitors(tmp_path) == []
+    quote = {"sku": "SKU-1", "competitor": "Market", "price": "10.00", "observed_at": "2026-11-08"}
+    replace_quotes(tmp_path, [quote])
+    (tmp_path / "competitor_feed.json").write_text(json.dumps([{**quote, "price": "99.00"}]))
+    assert read_competitors(tmp_path) == [quote]
+    initialize_market(tmp_path)
+    assert read_competitors(tmp_path) == [quote]
+    with pytest.raises(sqlite3.IntegrityError):
+        replace_quotes(tmp_path, [{**quote, "price": "12.00"}, quote])
+    assert read_competitors(tmp_path) == [quote]

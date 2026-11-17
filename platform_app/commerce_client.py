@@ -1,8 +1,9 @@
 """HTTP-only Commerce adapter; the platform never opens commerce.db."""
 
 import asyncio
-import json
+from contextlib import closing
 from pathlib import Path
+import sqlite3
 
 import httpx
 
@@ -68,12 +69,14 @@ class CommerceClient:
 
 
 def read_competitors(data_dir: Path) -> list[dict]:
-    """The synthetic feed is an external adapter input, not Commerce database access."""
-    path = data_dir / "competitor_feed.json"
+    """Read current external observations from market.db, independently of Commerce."""
+    path = Path(data_dir) / "market.db"
     if not path.exists():
         return []
-    payload = json.loads(path.read_text())
-    items = payload.get("items", []) if isinstance(payload, dict) else payload
-    if not isinstance(items, list):
-        raise ValueError("Competitor feed must contain an item list")
-    return items
+    try:
+        with closing(sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True, timeout=10)) as db:
+            db.row_factory = sqlite3.Row
+            return [dict(row) for row in db.execute(
+                "SELECT sku,competitor,price,observed_at FROM competitor_quotes ORDER BY rowid")]
+    except sqlite3.Error:
+        raise ValueError("The SQLite competitor feed is unavailable or invalid") from None

@@ -1,5 +1,7 @@
 """Explicit-start, lifespan-owned nonoverlapping interval sessions. Never restart timers."""
 
+from platform_app.database import sql
+
 import asyncio
 from datetime import datetime, timedelta, timezone
 import json
@@ -24,9 +26,7 @@ class IntervalLoop:
         self.task = None
         self.session = None
         with store.connection() as db:
-            db.execute("CREATE TABLE IF NOT EXISTS loop_sessions(id TEXT PRIMARY KEY,created_at TEXT,state TEXT)")
-            db.execute("CREATE TABLE IF NOT EXISTS loop_iterations(session_id TEXT,iteration INTEGER,run_id TEXT,status TEXT,"
-                       "PRIMARY KEY(session_id,iteration))")
+            db.executescript(sql("loop_ddl.sql"))
             rows = db.execute("SELECT id,state FROM loop_sessions").fetchall()
             for row in rows:
                 state = json.loads(row["state"])

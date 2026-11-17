@@ -23,7 +23,7 @@ claims that they were performed in this development session. The PRD remains unc
 ```
 
 No implicit model download occurs during application startup/inference. The official model
-archive is checksum-verified; model files and Chroma remain under ignored `data/`.
+archive is checksum-verified; model files and the SQLite RAG database remain under ignored `data/`.
 An unavailable/corrupt cache produces an actionable error. A different
 `RAG_MODEL_CACHE_DIR` can be prepared separately without discarding existing evidence.
 

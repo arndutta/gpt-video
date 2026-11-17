@@ -13,7 +13,7 @@ validated execution/revert, saved scenarios, feedback calibration, and an explic
 interval loop. These are local demonstration capabilities, not production authorization
 or evidence of measured business uplift.
 
-Latest verification: **529 backend tests**, **67 DOM tests**, the UI build,
+Latest verification: **562 backend tests**, **67 DOM tests**, the UI build,
 and the isolated **56-case W1–W9 demonstration** pass. T06 startup checks and T38
 functional acceptance are complete. An isolated local gateway passes real alias and
 embedding pre-flight checks and a real five-stage, one-SKU workflow reaching human review;
@@ -70,8 +70,16 @@ processes. Startup order is Commerce → platform → Vite. All listeners bind t
 | Service | URL | Owned storage |
 |---|---|---|
 | UI | `http://127.0.0.1:5173` | Browser theme preference |
-| Platform | `http://127.0.0.1:8000/docs` | `data/app.db`, `checkpoints.db`, `llm_cache.db`, Chroma, telemetry |
+| Platform | `http://127.0.0.1:8000/docs` | `data/app.db`, `checkpoints.db`, `llm_cache.db`, `rag.db`, telemetry |
 | Commerce | `http://127.0.0.1:8001/docs` | `data/commerce.db`, price book, receipts/history |
+
+To install all SQLite tables and initial data explicitly, run
+`.venv/bin/python -m scripts.database`. Existing data is preserved; an empty catalog
+receives the demo dataset. Competitor quotes now live in `data/market.db`, and model
+pricing rates live in `data/app.db`. Grounding documents, vectors, and manifests live
+in `data/rag.db`. The runtime uses packaged DDL/DML scripts and database reads instead
+of JSON data files. After installation, `.venv/bin/python -m scripts.database cleanup-legacy`
+removes the two verified legacy data sidecars. See [SQLite setup and SQL exports](docs/sqlite.md).
 
 The browser uses Vite's `/api` proxy. Platform business reads/writes go through Commerce
 HTTP; the platform never opens Commerce SQLite or imports Commerce implementation code.
@@ -147,8 +155,10 @@ reliability and remote Langfuse remain unverified.
 ## Knowledge and caching
 
 Local MiniLM ONNX inference uses a checksum-verified, explicitly prepared model in
-`data/models`. Inference/startup never downloads it implicitly. Chroma persists in
-`data/chroma`; active versions publish atomically only after successful indexing.
+`data/models`. Inference/startup never downloads it implicitly. SQLite persists grounding
+documents, embedding vectors, and manifests in `data/rag.db`; active versions publish
+atomically only after successful indexing. The database installer migrates an existing
+`data/chroma` store before initializing the SQLite index.
 Historical citations remain resolvable. Runtime UTF-8 `.txt`/`.md` uploads are bounded to
 2MB, with durable queued/indexing/ready/failed/interrupted jobs and collection statistics.
 

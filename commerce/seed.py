@@ -8,7 +8,8 @@ import math
 from pathlib import Path
 import random
 
-from commerce.storage import connect, initialize
+from commerce.market import quote_values, replace_quotes
+from commerce.storage import connect, initialize, seed_statements
 
 
 def money(value: float | Decimal) -> str:
@@ -61,11 +62,18 @@ def generate(sku_count=500, days=180, seed=42, as_of=date(2026, 11, 8),
 def seed_database(db_path: str | Path, *, sku_count=500, days=180, seed=42,
                   as_of=date(2026, 11, 8), data_dir: str | Path | None = None,
                   reset=False, categories=("Beverages", "Snacks", "Household")) -> dict:
+    """Validate before changing data, then commit atomically within each database.
+
+    Commerce and market use separate transactions; an I/O failure between their
+    commits can require retrying the explicit seed/reset operation.
+    """
     path = Path(db_path)
     initialize(path)
     output = Path(data_dir) if data_dir else path.parent
     output.mkdir(parents=True, exist_ok=True)
     dataset = generate(sku_count, days, seed, as_of, categories)
+    quote_values(dataset["competitors"])
+    statements = seed_statements()
     with connect(path) as connection:
         connection.execute("BEGIN IMMEDIATE")
         if connection.execute("SELECT COUNT(*) FROM products").fetchone()[0] and not reset:
@@ -74,23 +82,16 @@ def seed_database(db_path: str | Path, *, sku_count=500, days=180, seed=42,
             for table in ("batches", "price_history", "sales", "inventory", "prices",
                           "evaluation_truth", "products", "metadata"):
                 connection.execute(f"DELETE FROM {table}")
-        connection.executemany("INSERT INTO products VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", dataset["products"])
-        connection.executemany("INSERT INTO prices VALUES (?,?,?,?)", dataset["prices"])
-        connection.executemany("INSERT INTO inventory VALUES (?,?,?)", dataset["inventory"])
-        connection.executemany(
-            "INSERT INTO sales (sku,date,price,units,promotion,seasonal_index) VALUES (?,?,?,?,?,?)",
-            dataset["sales"],
-        )
-        connection.executemany("INSERT INTO evaluation_truth VALUES (?,?,?)", dataset["truth"])
-        connection.executemany("INSERT INTO metadata VALUES (?,?)", [
+        for table in ("products", "prices", "inventory", "sales", "truth"):
+            connection.executemany(statements[table], dataset[table])
+        connection.executemany(statements["metadata"], [
             ("as_of", dataset["as_of"]), ("seed", str(seed)), ("history_days", str(days))
         ])
         connection.commit()
-    (output / "competitor_feed.json").write_text(json.dumps(dataset["competitors"], indent=2) + "\n")
-    evaluator = {row[0]: {"elasticity": row[1], "baseline_demand": row[2]} for row in dataset["truth"]}
-    (output / "evaluation_truth.json").write_text(json.dumps(evaluator, indent=2) + "\n")
+    replace_quotes(output, dataset["competitors"])
     return {"sku_count": sku_count, "sales_rows": len(dataset["sales"]),
-            "as_of": dataset["as_of"], "db_path": str(path)}
+            "competitor_quotes": len(dataset["competitors"]),
+            "as_of": dataset["as_of"], "db_path": str(path), "market_db_path": str(output / "market.db")}
 
 
 def main():

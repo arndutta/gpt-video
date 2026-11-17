@@ -1,6 +1,6 @@
 """A fresh observed market shock reaches the deterministic Escalate gate."""
 
-import json
+import sqlite3
 
 import pytest
 
@@ -14,13 +14,9 @@ def test_large_observed_market_gap_prevents_automatic_execution(tmp_path, mode):
         complete(client, upload(client))
         assert client.patch("/api/control/mode", json={"mode": mode, "hold_seconds": 0}).status_code == 200
         product = client.get("/api/catalog", params={"limit": 1}).json()["items"][0]
-        path = tmp_path / "competitor_feed.json"
-        feed = json.loads(path.read_text())
-        rows = feed["items"] if isinstance(feed, dict) else feed
-        for row in rows:
-            if row["sku"] == product["sku"]:
-                row["price"] = f"{float(product['current_price']) / 2:.2f}"
-        path.write_text(json.dumps(feed))
+        with sqlite3.connect(tmp_path / "market.db") as db:
+            db.execute("UPDATE competitor_quotes SET price=? WHERE sku=?",
+                       (f"{float(product['current_price']) / 2:.2f}", product["sku"]))
         response = client.post("/api/runs", json={"kind": "grounded", "iterations": 100,
                                                   "sku_ids": [product["sku"]]})
         assert response.status_code == 202, response.text

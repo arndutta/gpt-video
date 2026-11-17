@@ -1,4 +1,4 @@
-"""Persistent Chroma integration uses deterministic test vectors, never downloaded models."""
+"""Persistent SQLite integration uses deterministic test vectors, never downloaded models."""
 
 import inspect
 import json
@@ -54,7 +54,7 @@ def make_store(tmp_path):
     opened = []
 
     def create(**kwargs):
-        store = RagStore(tmp_path / "chroma", kwargs.pop("embedder", TestEmbedder()), **kwargs)
+        store = RagStore(tmp_path / "rag.db", kwargs.pop("embedder", TestEmbedder()), **kwargs)
         opened.append(store)
         return store
 
@@ -116,7 +116,7 @@ finally:
     store.close()
 """
     result = subprocess.run([sys.executable, "-c", code, str(Path(__file__).resolve()),
-                             str(tmp_path / "chroma"), citation.citation_id],
+                             str(tmp_path / "rag.db"), citation.citation_id],
                             capture_output=True, text=True, check=True, timeout=20)
     output = json.loads(result.stdout)
     assert output["text"] == citation.text and output["version"] == "v1"
@@ -274,8 +274,8 @@ def test_invalid_injected_embedding_vectors_never_publish_grounding(make_store, 
     assert store.retrieve("margin").chunks[0].version == "v1"
 
 
-def test_partial_chroma_write_is_not_published_and_retry_can_finish(make_store, monkeypatch):
-    from chromadb.api.models.Collection import Collection
+def test_partial_sqlite_write_is_not_published_and_retry_can_finish(make_store, monkeypatch):
+    from platform_app.rag.sqlite_index import SQLiteCollection as Collection
 
     store = make_store(chunk_size=90, chunk_overlap=15)
     first = store.ingest(document(version="v1"))

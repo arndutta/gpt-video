@@ -1,0 +1,1 @@
+INSERT OR IGNORE INTO corpus VALUES (1, 0);

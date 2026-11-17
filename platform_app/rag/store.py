@@ -1,4 +1,4 @@
-"""Embedded Chroma evidence store with versioned citations and fail-closed retrieval."""
+"""SQLite evidence and vector store with versioned citations and fail-closed retrieval."""
 
 import hashlib
 import json
@@ -6,12 +6,10 @@ from collections.abc import Mapping
 from pathlib import Path
 from types import MappingProxyType
 
-import chromadb
-from chromadb.config import Settings as ChromaSettings
-
 from .chunking import chunk_text
 from .embedding_common import validate_vectors
 from .ledger import Manifest
+from .sqlite_index import SQLiteIndex
 from .models import (
     COLLECTION_NAMES, DEFAULT_ROLE_BREADTHS, CitationNotFound, Document, EvidenceChunk,
     GroundingUnavailable, IngestResult, RagError, RetrievalContext,
@@ -38,12 +36,11 @@ class RagStore:
         if type(self.dimensions) is not int or self.dimensions < 1:
             raise ValueError("Embedder must expose a positive integer dimension count")
         self.path = Path(path).resolve()
-        self.path.mkdir(parents=True, exist_ok=True)
-        self.manifest = Manifest(self.path / "manifest.sqlite3", self.model_id, self.dimensions)
-        self.client = chromadb.PersistentClient(
-            path=str(self.path), settings=ChromaSettings(anonymized_telemetry=False, allow_reset=False))
-        self._collections = {name: self.client.get_or_create_collection(
-            name=name, embedding_function=None, metadata={"hnsw:space": "cosine"}) for name in COLLECTION_NAMES}
+        self.db_path = self.path if self.path.suffix in {".db", ".sqlite", ".sqlite3"} else self.path / "rag.db"
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self.manifest = Manifest(self.db_path, self.model_id, self.dimensions)
+        self.client = SQLiteIndex(self.db_path, self.dimensions)
+        self._collections = {name: self.client.get_or_create_collection(name=name) for name in COLLECTION_NAMES}
         self.chunk_size, self.chunk_overlap = chunk_size, chunk_overlap
         self._closed = False
 
