@@ -47,7 +47,7 @@ jobs:
         run: .venv\Scripts\python -m scripts.rag check
       - name: Run backend regression checks
         timeout-minutes: 10
-        run: .venv\Scripts\python -m pytest -v -o faulthandler_timeout=120 --durations=20 --junitxml=data/windows-unit.junit.xml
+        run: .venv\Scripts\python -u -m pytest -v -o faulthandler_timeout=120 --durations=20 --junitxml=data/windows-unit.junit.xml *>&1 | Tee-Object -FilePath data/windows-unit.log
       - name: Test the frontend
         run: npm --prefix web test
       - name: Build the frontend
@@ -63,6 +63,7 @@ jobs:
           name: windows-acceptance-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             data/windows-unit.junit.xml
+            data/windows-unit.log
             data/windows-native-acceptance.json
             data/windows-batch-acceptance.json
           if-no-files-found: warn
