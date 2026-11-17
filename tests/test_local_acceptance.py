@@ -4,11 +4,24 @@ from datetime import date
 import json
 from pathlib import Path
 import subprocess
+import socket
 from types import SimpleNamespace
 
 import pytest
 
 from scripts import grounding_smoke, local_acceptance as acceptance, operations_smoke, smoke
+
+
+def test_port_probe_distinguishes_free_loopback_port_from_real_listener(monkeypatch):
+    with socket.socket() as listener, socket.socket() as available:
+        listener.bind(("127.0.0.1", 0))
+        listener.listen()
+        occupied = listener.getsockname()[1]
+        available.bind(("127.0.0.1", 0))
+        free = available.getsockname()[1]
+        available.close()
+        monkeypatch.setattr(acceptance, "PORTS", (free, occupied))
+        assert acceptance.port_states() == {str(free): True, str(occupied): False}
 
 
 class Child:

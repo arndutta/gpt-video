@@ -57,7 +57,9 @@ def port_states():
                 probe.bind(("127.0.0.1", port))
             # Windows SO_REUSEADDR can share an occupied address. Reject a listener too.
             try:
-                with socket.create_connection(("127.0.0.1", port), timeout=.2):
+                # Winsock can take about a second to reject a closed loopback
+                # port. A 200ms timeout misclassified every free CI port as busy.
+                with socket.create_connection(("127.0.0.1", port), timeout=2):
                     result[str(port)] = False
             except ConnectionRefusedError:
                 result[str(port)] = True
