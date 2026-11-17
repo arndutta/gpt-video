@@ -50,15 +50,21 @@ def child_environment(directory, model_cache):
 
 def port_states():
     result = {}
+    exclusive = getattr(socket, "SO_EXCLUSIVEADDRUSE", None)
     for port in PORTS:
         try:
             with socket.socket() as probe:
-                probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                # Windows reuse permits sharing an occupied address. An exclusive
+                # bind rejects existing owners without a connection probe: Windows
+                # firewall stealth mode can silently drop even closed loopback SYNs.
+                option = exclusive if exclusive is not None else socket.SO_REUSEADDR
+                probe.setsockopt(socket.SOL_SOCKET, option, 1)
                 probe.bind(("127.0.0.1", port))
-            # Windows SO_REUSEADDR can share an occupied address. Reject a listener too.
+            if exclusive is not None:
+                result[str(port)] = True
+                continue
+            # Also reject a listener on hosts without exclusive address binding.
             try:
-                # Winsock can take about a second to reject a closed loopback
-                # port. A 200ms timeout misclassified every free CI port as busy.
                 with socket.create_connection(("127.0.0.1", port), timeout=2):
                     result[str(port)] = False
             except ConnectionRefusedError:

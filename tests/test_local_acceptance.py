@@ -24,6 +24,33 @@ def test_port_probe_distinguishes_free_loopback_port_from_real_listener(monkeypa
         assert acceptance.port_states() == {str(free): True, str(occupied): False}
 
 
+def test_windows_port_probe_uses_exclusive_binding_without_connecting(monkeypatch):
+    options = []
+
+    class Probe:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            pass
+
+        def setsockopt(self, level, option, value):
+            options.append((level, option, value))
+
+        def bind(self, address):
+            if address[1] == 8000:
+                raise OSError("address already owned")
+
+    def unexpected_connection(*_args, **_kwargs):
+        pytest.fail("Exclusive binding must not depend on closed-port SYN responses")
+
+    monkeypatch.setattr(socket, "SO_EXCLUSIVEADDRUSE", -5, raising=False)
+    monkeypatch.setattr(socket, "socket", Probe)
+    monkeypatch.setattr(socket, "create_connection", unexpected_connection)
+    assert acceptance.port_states() == {"8001": True, "8000": False, "5173": True}
+    assert options == [(socket.SOL_SOCKET, -5, 1)] * 3
+
+
 class Child:
     def __init__(self, number, events):
         self.number, self.events, self.code = number, events, None
