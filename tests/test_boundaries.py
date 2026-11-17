@@ -5,6 +5,7 @@ they are a maintainability guard, not a sandbox against deliberately obfuscated 
 """
 
 import ast
+import os
 from pathlib import Path
 import re
 
@@ -151,8 +152,12 @@ def test_provider_chat_calls_require_the_single_grounded_wrapper():
 
 def test_implementation_code_files_stay_within_400_lines():
     """NFR-030: documentation is excluded; implementation and tests share the code ceiling."""
-    files = [path for path in ROOT.rglob("*") if path.is_file() and path.suffix in CODE_EXTENSIONS
-             and not any(part in IGNORED_DIRECTORIES for part in path.relative_to(ROOT).parts)]
+    # Prune dependency/cache trees before walking them. Filtering only after rglob
+    # still enumerates tens of thousands of ignored files on native Windows.
+    files = []
+    for directory, children, names in os.walk(ROOT):
+        children[:] = [name for name in children if name not in IGNORED_DIRECTORIES]
+        files.extend(Path(directory) / name for name in names if Path(name).suffix in CODE_EXTENSIONS)
     oversized = [(str(path.relative_to(ROOT)), len(path.read_text(encoding="utf-8").splitlines()))
                  for path in files if len(path.read_text(encoding="utf-8").splitlines()) > 400]
     assert not oversized, f"Split implementation files above 400 lines: {oversized}"
