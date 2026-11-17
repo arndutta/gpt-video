@@ -46,7 +46,8 @@ jobs:
       - name: Verify real local embeddings
         run: .venv\Scripts\python -m scripts.rag check
       - name: Run backend regression checks
-        run: .venv\Scripts\python -m pytest -q --junitxml=data/windows-unit.junit.xml
+        timeout-minutes: 10
+        run: .venv\Scripts\python -m pytest -v -o faulthandler_timeout=120 --durations=20 --junitxml=data/windows-unit.junit.xml
       - name: Test the frontend
         run: npm --prefix web test
       - name: Build the frontend
