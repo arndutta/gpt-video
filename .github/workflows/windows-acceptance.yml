@@ -45,17 +45,29 @@ jobs:
         run: .venv\Scripts\python -m scripts.rag prepare
       - name: Verify real local embeddings
         run: .venv\Scripts\python -m scripts.rag check
-      - name: Run backend regression checks
-        timeout-minutes: 10
-        run: .venv\Scripts\python -u -m pytest -v -o faulthandler_timeout=120 --durations=20 --junitxml=data/windows-unit.junit.xml *>&1 | Tee-Object -FilePath data/windows-unit.log
       - name: Test the frontend
         run: npm --prefix web test
       - name: Build the frontend
         run: npm --prefix web run build
       - name: Exercise isolated native service startup and shutdown
+        timeout-minutes: 4
         run: .venv\Scripts\python -m scripts.local_acceptance --output data/windows-native-acceptance.json
       - name: Exercise the actual batch wrapper and graceful shutdown
+        timeout-minutes: 4
         run: .venv\Scripts\python -m scripts.windows_startup_check --output data/windows-batch-acceptance.json
+      - name: Retain native startup evidence before regression
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-native-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            data/windows-native-acceptance.json
+            data/windows-batch-acceptance.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Run backend regression checks
+        timeout-minutes: 10
+        run: .venv\Scripts\python -u -m pytest -v -o faulthandler_timeout=120 --durations=20 --junitxml=data/windows-unit.junit.xml *>&1 | Tee-Object -FilePath data/windows-unit.log
       - name: Retain acceptance reports
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

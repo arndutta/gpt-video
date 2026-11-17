@@ -157,7 +157,7 @@ def test_windows_workflow_limits_triggers_and_permissions_and_pins_official_acti
     job = workflow["jobs"]["windows"]
     assert job["runs-on"] == "windows-2025" and job["timeout-minutes"] == "30"
     actions = [step["uses"] for step in job["steps"] if "uses" in step]
-    assert len(actions) == 4 and all(value.startswith("actions/") and len(value.split("@")[1]) == 40 for value in actions)
+    assert len(actions) >= 4 and all(value.startswith("actions/") and len(value.split("@")[1]) == 40 for value in actions)
     assert job["steps"][0]["with"]["persist-credentials"] == "false"
     assert not any("secrets." in str(step) for step in job["steps"])
     assert all(len(step["run"].splitlines()) == 1 and ";" not in step["run"]
