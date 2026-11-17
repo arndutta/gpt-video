@@ -1,6 +1,7 @@
 import { mkdir, mkdtemp, readdir, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 
 // Bundle repository TSX only. Dependencies stay external, sharing one React instance.
@@ -13,7 +14,7 @@ try {
     outExtension: { '.js': '.mjs' }, bundle: true, packages: 'external', platform: 'node',
     format: 'esm', jsx: 'automatic', loader: { '.css': 'empty' }, logLevel: 'warning' });
   const files = entries.map(name => join(directory, name.replace(/\.jsx$/, '.mjs')));
-  const result = spawnSync(process.execPath, ['--import', join(root, 'tests/dom-setup.mjs'),
+  const result = spawnSync(process.execPath, ['--import', pathToFileURL(join(root, 'tests/dom-setup.mjs')).href,
     '--test', '--test-concurrency=1', ...files], { cwd: root, stdio: 'inherit', timeout: 120000 });
   if (result.error) throw result.error;
   process.exitCode = result.status ?? 1;
